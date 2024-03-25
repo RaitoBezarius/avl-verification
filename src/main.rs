@@ -1,10 +1,14 @@
-use std::cmp::Ordering;
+pub enum Ordering {
+    Less,
+    Equal,
+    Greater,
+}
 
 trait Ord {
     fn cmp(&self, other: &Self) -> Ordering;
 }
 
-struct AVLNode<T: Ord> {
+struct AVLNode<T> {
     value: T,
     left: AVLTree<T>,
     right: AVLTree<T>,
@@ -12,7 +16,7 @@ struct AVLNode<T: Ord> {
 
 type AVLTree<T> = Option<Box<AVLNode<T>>>;
 
-struct AVLTreeSet<T: Ord> {
+struct AVLTreeSet<T> {
     root: AVLTree<T>,
 }
 
@@ -52,10 +56,4 @@ impl Ord for u32 {
             Ordering::Greater
         }
     }
-}
-
-fn main() {
-    let mut tree = AVLTreeSet::new();
-    tree.insert(3);
-    tree.insert(2);
 }
