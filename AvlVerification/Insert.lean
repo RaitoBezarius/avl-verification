@@ -11,49 +11,50 @@ open Tree (AVLTree)
 variable {T: Type}
 
 @[pspec]
-theorem AVLTreeSet.insert_loop_spec {H: avl_verification.Ord T} 
-  (a: T) (t: Option (AVLNode T))
-  [LT T]
-  (Hbs_search: BST.BST t)
-  (Hcmp_spec: ∀ a b, ∃ o, H.cmp a b = Result.ret o):
+theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
+  (Hcmp_spec: ∀ a b, ∃ o, H.cmp a b = Result.ret o)
+  (a: T) (t: Option (AVLNode T)):
   ∃ added t_new, AVLTreeSet.insert_loop T H a t = Result.ret ⟨ added, t_new ⟩
 --  ∧ AVLTree.set t'.2 = insert a (AVLTree.set t)
-  ∧ BST.BST t_new
+  ∧ (BST.ForallNode p t -> p a -> BST.ForallNode p t_new)
   := by match t with
   | none =>
-    simp [AVLTreeSet.insert_loop, AVLTree.set, setOf, BST.BST]
+    simp [AVLTreeSet.insert_loop, AVLTree.set, setOf]
+    intros _ Hpa
+    constructor; all_goals try simp [BST.ForallNode.none]
+    exact Hpa
   | some (AVLNode.mk b left right) =>
     rw [AVLTreeSet.insert_loop]
     simp only []
     progress keep Hordering as ⟨ ordering ⟩
     cases ordering
     all_goals simp only []
-    have Hbs_search_right: BST.BST right := BST.right Hbs_search
-    have Hbs_search_left: BST.BST left := BST.left Hbs_search
     {
-      progress keep Htree as ⟨ added₁, right₁, Hbst ⟩
+      progress keep Htree as ⟨ added₁, right₁, Hnode ⟩
       refine' ⟨ added₁, ⟨ some (AVLNode.mk b left right₁), _ ⟩ ⟩
       simp only [true_and]
-      refine' (BST.BST.some b left right₁ _ _ Hbs_search_left Hbst)
-      cases' Hbs_search; assumption
-      induction right with
-      | none =>
-        simp [AVLTreeSet.insert_loop] at Htree
-        rw [← Htree.2]
-        refine' (BST.ForallNode.some _ _ _ BST.ForallNode.none _ BST.ForallNode.none)
-        sorry
-      | some node =>
-        -- clef: ∀ x ∈ node.right, b < x
-        -- de plus: b < a
-        -- or, right₁ = insert a node.right moralement
-        -- donc, il suffit de prouver que: ∀ x ∈ insert a node.right, b < x <-> b < a /\ ∀ x ∈ node.right, b < x
-        sorry
+      intros Hptree Hpa
+      constructor
+      exact Hptree.left
+      exact Hptree.label
+      exact Hnode Hptree.right Hpa
     }
     {
-      simp [Hbs_search]
+      simp; tauto
     }
     {
+      -- TODO: investigate wlog.
       -- Symmetric case of left.
+      progress keep Htree as ⟨ added₁, left₁, Hnode ⟩
+      refine' ⟨ added₁, ⟨ some (AVLNode.mk b left₁ right), _ ⟩ ⟩
+      simp only [true_and]
+      intros Hptree Hpa
+      constructor
+      exact Hnode Hptree.left Hpa
+      exact Hptree.label
+      exact Hptree.right
+    }
+
       sorry
     }
 
