@@ -10,6 +10,12 @@ inductive ForallNode (p: T -> Prop): AVLTree T -> Prop
 | none : ForallNode p none
 | some (a: T) (left: AVLTree T) (right: AVLTree T) : ForallNode p left -> p a -> ForallNode p right -> ForallNode p (some (AVLNode.mk a left right))
 
+theorem ForallNode.left {p: T -> Prop} {t: AVLTree T}: ForallNode p t -> ForallNode p t.left := sorry
+
+theorem ForallNode.right {p: T -> Prop} {t: AVLTree T}: ForallNode p t -> ForallNode p t.right := sorry
+
+theorem ForallNode.label {a: T} {p: T -> Prop} {left right: AVLTree T}: ForallNode p (AVLNode.mk a left right) -> p a := sorry
+
 -- This is the binary search invariant.
 inductive BST [LT T]: AVLTree T -> Prop
 | none : BST none
