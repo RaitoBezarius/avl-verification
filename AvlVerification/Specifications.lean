@@ -67,4 +67,14 @@ def ordOfOrdSpec (H: avl_verification.Ord T) (spec: OrdSpec H): Ord T where
     simp only
   )
 
+theorem ltOfRustOrder {Spec: OrdSpec H}: 
+  haveI O := ordOfOrdSpec H Spec
+  haveI := @ltOfOrd _ O
+  ∀ a b, H.cmp a b = .ret .Less -> a < b := by
+  intros a b
+  intro Hcmp
+  change ((Spec.cmp a b).get? _ == .lt)
+  simp [Hcmp, map, avl_verification.Ordering.toLeanOrdering]
+  simp [get?]
+  rfl
 end Specifications

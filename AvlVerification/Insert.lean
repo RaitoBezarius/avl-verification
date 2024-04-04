@@ -7,8 +7,16 @@ namespace Implementation
 open Primitives
 open avl_verification
 open Tree (AVLTree)
+open Specifications (OrdSpec ordSpecOfInfaillible ordOfOrdSpec ltOfRustOrder)
 
-variable {T: Type}
+-- TODO: OSpec should be proven.
+variable (T: Type) (H: avl_verification.Ord T) (Ospec: @OrdSpec T H)
+
+instance rustOrder {U: Type} {O: avl_verification.Ord U} (OSpec: OrdSpec O): _root_.Ord U := ordOfOrdSpec O OSpec
+-- Why the TC fails if I don't specify the previous instance explicitly?
+instance rustLt {U: Type} {O: avl_verification.Ord U} (OSpec: OrdSpec O): LT U := @ltOfOrd _ (ordOfOrdSpec O OSpec)
+
+instance rustLt' : LT T := rustLt Ospec
 
 @[pspec]
 theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
@@ -55,6 +63,47 @@ theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
       exact Hptree.right
     }
 
+@[pspec]
+lemma AVLTreeSet.insert_loop_spec_global
+  (a: T) (t: Option (AVLNode T))
+  :
+  haveI : LT T := (rustLt Ospec)
+  BST.BST t -> ∃ added t_new, AVLTreeSet.insert_loop T H a t = Result.ret ⟨ added, t_new ⟩
+  ∧ BST.BST t_new := by 
+  intro Hbst
+  letI instOrd : _root_.Ord T := (rustOrder Ospec)
+  letI instLt : LT T := (rustLt Ospec)
+  match t with
+  | none => simp [AVLTreeSet.insert_loop]
+  | some (AVLNode.mk b left right) =>
+    rw [AVLTreeSet.insert_loop]
+    simp only []
+    have := Ospec.infallible; simp at this
+    -- TODO: unbundle `this`...
+    have : ∀ a b, ∃ o, H.cmp a b = .ret o := sorry
+    progress keep Hordering as ⟨ ordering ⟩
+    cases ordering
+    all_goals simp only []
+    {
+      have ⟨ added₂, right₂, ⟨ H_result, H_bst ⟩ ⟩ := AVLTreeSet.insert_loop_spec_global a right (BST.right Hbst)
+      progress keep Htree with AVLTreeSet.insert_loop_spec_local as ⟨ added₁, right₁, Hnode ⟩
+      exact (fun x => b < x)
+      rewrite [Htree] at H_result; simp at H_result
+      refine' ⟨ added₁, ⟨ some (AVLNode.mk b left right₁), _ ⟩ ⟩
+      simp only [true_and]
+      cases' Hbst with _ _ _ H_forall_left H_forall_right H_bst_left H_bst_right
+      constructor
+      exact H_forall_left
+      apply Hnode; exact H_forall_right
+      exact (ltOfRustOrder H b a Hordering)
+      exact H_bst_left
+      convert H_bst
+      exact H_result.2
+    }
+    {
+      simp; tauto
+    }
+    {
       sorry
     }
 
