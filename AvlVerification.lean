@@ -17,9 +17,19 @@ inductive Ordering :=
 structure Ord (Self : Type) where
   cmp : Self → Self → Result Ordering
 
+/- Trait declaration: [core::marker::Copy]
+   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/marker.rs', lines 450:0-450:21
+   Name pattern: core::marker::Copy -/
+structure core.marker.Copy (Self : Type) where
+  cloneCloneInst : core.clone.Clone Self
+
 /- [avl_verification::max]:
-   Source: 'src/main.rs', lines 1:0-1:47 -/
-def max (T : Type) (OrdInst : Ord T) (a : T) (b : T) : Result T :=
+   Source: 'src/main.rs', lines 1:0-1:38 -/
+def max
+  (T : Type) (OrdInst : Ord T) (coremarkerCopyInst : core.marker.Copy T)
+  (a : T) (b : T) :
+  Result T
+  :=
   do
   let o ← OrdInst.cmp a b
   match o with
@@ -48,47 +58,17 @@ def OrdUsize : Ord Usize := {
 inductive AVLNode (T : Type) :=
 | mk : T → Option (AVLNode T) → Option (AVLNode T) → Usize → AVLNode T
 
-/- Trait declaration: [core::ops::arith::Add]
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/ops/arith.rs', lines 76:0-76:25
-   Name pattern: core::ops::arith::Add -/
-structure core.ops.arith.Add (Self Rhs : Type) where
-  Output : Type
-  add : Self → Rhs → Result Output
-
-/- [core::ops::arith::{(core::ops::arith::Add<usize> for usize)}::add]:
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/ops/arith.rs', lines 102:12-102:41
-   Name pattern: core::ops::arith::{core::ops::arith::Add<usize, usize>}::add -/
-axiom core.ops.arith.AddUsizeUsize.add : Usize → Usize → Result Usize
-
-/- Trait implementation: [core::ops::arith::{(core::ops::arith::Add<usize> for usize)}]
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/ops/arith.rs', lines 97:8-103:9
-   Name pattern: core::ops::arith::Add<usize, usize> -/
-def core.ops.arith.AddUsizeUsize : core.ops.arith.Add Usize Usize := {
-  Output := Usize
-  add := core.ops.arith.AddUsizeUsize.add
+/- Trait implementation: [core::marker::{(core::marker::Copy for usize)#37}]
+   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/marker.rs', lines 47:29-47:65
+   Name pattern: core::marker::Copy<usize> -/
+def core.marker.CopyUsize : core.marker.Copy Usize := {
+  cloneCloneInst := core.clone.CloneUsize
 }
-
-/- [core::ops::arith::{(core::ops::arith::Add<&0 (usize)> for usize)#15}::add]:
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/internal_macros.rs', lines 44:12-44:68
-   Name pattern: core::ops::arith::{core::ops::arith::Add<usize, &'0 usize>}::add -/
-axiom core.ops.arith.AddUsize&0 Usize.add : Usize → Usize → Result Usize
-
-/- Trait implementation: [core::ops::arith::{(core::ops::arith::Add<&0 (usize)> for usize)#15}]
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/internal_macros.rs', lines 40:8-47:9
-   Name pattern: core::ops::arith::Add<usize, &'_ usize> -/
-def core.ops.arith.AddUsize&0 Usize : core.ops.arith.Add Usize Usize := {
-  Output := core.ops.arith.AddUsizeUsize.Output
-  add := core.ops.arith.AddUsize&0 Usize.add
-}
-
-/- [avl_verification::{avl_verification::AVLNode<T>#1}::height]:
-   Source: 'src/main.rs', lines 47:4-47:29 -/
-def AVLNode.height (T : Type) (self : AVLNode T) : Result Usize :=
-  sorry
 
 /- [avl_verification::{avl_verification::AVLNode<T>#1}::left_height]:
    Source: 'src/main.rs', lines 51:4-51:34 -/
-def AVLNode.left_height (T : Type) (self : AVLNode T) : Result Usize :=
+mutual divergent def AVLNode.left_height
+  (T : Type) (self : AVLNode T) : Result Usize :=
   let ⟨ _, o, _, _ ⟩ := self
   match o with
   | none => Result.ok 0#usize
@@ -96,16 +76,34 @@ def AVLNode.left_height (T : Type) (self : AVLNode T) : Result Usize :=
 
 /- [avl_verification::{avl_verification::AVLNode<T>#1}::right_height]:
    Source: 'src/main.rs', lines 59:4-59:35 -/
-def AVLNode.right_height (T : Type) (self : AVLNode T) : Result Usize :=
+divergent def AVLNode.right_height
+  (T : Type) (self : AVLNode T) : Result Usize :=
   let ⟨ _, _, o, _ ⟩ := self
   match o with
   | none => Result.ok 0#usize
   | some right => AVLNode.height T right
 
+/- [avl_verification::{avl_verification::AVLNode<T>#1}::height]:
+   Source: 'src/main.rs', lines 47:4-47:29 -/
+divergent def AVLNode.height (T : Type) (self : AVLNode T) : Result Usize :=
+  do
+  let i ← AVLNode.left_height T self
+  let i1 ← AVLNode.right_height T self
+  let i2 ← max Usize OrdUsize core.marker.CopyUsize i i1
+  1#usize + i2
+
+end
+
 /- [avl_verification::{avl_verification::AVLNode<T>#1}::update_height]:
    Source: 'src/main.rs', lines 43:4-43:31 -/
 def AVLNode.update_height (T : Type) (self : AVLNode T) : Result (AVLNode T) :=
-  sorry
+  do
+  let i ← AVLNode.left_height T self
+  let i1 ← AVLNode.right_height T self
+  let i2 ← max Usize OrdUsize core.marker.CopyUsize i i1
+  let i3 ← 1#usize + i2
+  let ⟨ t, o, o1, _ ⟩ := self
+  Result.ok (AVLNode.mk t o o1 i3)
 
 /- [avl_verification::{avl_verification::AVLNode<T>#1}::balance_factor]:
    Source: 'src/main.rs', lines 67:4-67:34 -/
