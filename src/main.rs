@@ -8,6 +8,8 @@ trait Ord {
     fn cmp(&self, other: &Self) -> Ordering;
 }
 
+// TODO: la structure AVLNode est extrait comme un inductif à un cas
+// au lieu d'être extrait comme une structure
 struct AVLNode<T> {
     value: T,
     left: AVLTree<T>,
