@@ -1,5 +1,5 @@
-fn max<'a, T: Ord>(a: &'a T, b: &'a T) -> &'a T {
-    match a.cmp(b) {
+fn max<T: Ord + Copy>(a: T, b: T) -> T {
+    match a.cmp(&b) {
         Ordering::Less => b,
         Ordering::Equal => b,
         Ordering::Greater => a,
@@ -41,11 +41,11 @@ struct AVLNode<T> {
 
 impl<T> AVLNode<T> {
     fn update_height(&mut self) {
-        self.height = 1 + max(&self.left_height(), &self.right_height());
+        self.height = 1 + max(self.left_height(), self.right_height());
     }
 
     fn height(&self) -> usize {
-        return 1 + max(&self.left_height(), &self.right_height());
+        return 1 + max(self.left_height(), self.right_height());
     }
 
     fn left_height(&self) -> usize {
