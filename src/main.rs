@@ -49,7 +49,7 @@ impl<T> AVLNode<T> {
     }
 
     fn left_height(&self) -> usize {
-        if let Some(left) = self.left.as_ref() {
+        if let Some(ref left) = self.left {
             left.height()
         } else {
             0
@@ -57,7 +57,7 @@ impl<T> AVLNode<T> {
     }
 
     fn right_height(&self) -> usize {
-        if let Some(right) = self.right.as_ref() {
+        if let Some(ref right) = self.right {
             right.height()
         } else {
             0
@@ -80,27 +80,38 @@ impl<T> AVLNode<T> {
             return false;
         }
 
-        let left_node = self.left.as_mut().unwrap();
-        let left_right_tree = left_node.right.take();
-        let left_left_tree = left_node.left.take();
+        if let Some(ref mut left_node) = self.left {
+            let left_right_tree = left_node.right.take();
+            let left_left_tree = left_node.left.take();
 
-        let mut new_right_tree = std::mem::replace(&mut self.left, left_left_tree);
-        std::mem::swap(&mut self.value, &mut new_right_tree.as_mut().unwrap().value);
-        let right_tree = self.right.take();
+            let mut new_right_tree = std::mem::replace(&mut self.left, left_left_tree);
+            if let Some(ref mut new_right_tree) = new_right_tree {
+                std::mem::swap(&mut self.value, &mut new_right_tree.value);
+            } else {
+                panic!();
+            }
 
-        let new_right_node = new_right_tree.as_mut().unwrap();
-        new_right_node.left = left_right_tree;
-        new_right_node.right = right_tree;
+            let right_tree = self.right.take();
 
-        self.right = new_right_tree;
+            if let Some(ref mut new_right_node) = new_right_tree {
+                new_right_node.left = left_right_tree;
+                new_right_node.right = right_tree;
+            } else {
+                panic!();
+            }
 
-        if let Some(node) = self.right.as_mut() {
-            node.update_height();
+            self.right = new_right_tree;
+
+            if let Some(ref mut node) = self.right {
+                node.update_height();
+            }
+
+            self.update_height();
+
+            true
+        } else {
+            panic!();
         }
-
-        self.update_height();
-
-        true
     }
 
     fn rotate_left(&mut self) -> bool {
@@ -108,36 +119,48 @@ impl<T> AVLNode<T> {
             return false;
         }
 
-        let right_node = self.right.as_mut().unwrap();
-        let right_left_tree = right_node.left.take();
-        let right_right_tree = right_node.right.take();
+        if let Some(ref mut right_node) = self.right {
+            let right_left_tree = right_node.left.take();
+            let right_right_tree = right_node.right.take();
 
-        let mut new_left_tree = std::mem::replace(&mut self.right, right_right_tree);
-        std::mem::swap(&mut self.value, &mut new_left_tree.as_mut().unwrap().value);
-        let left_tree = self.left.take();
+            let mut new_left_tree = std::mem::replace(&mut self.right, right_right_tree);
+            if let Some(ref mut new_left_tree) = new_left_tree {
+                std::mem::swap(&mut self.value, &mut new_left_tree.value);
+            } else {
+                panic!();
+            }
+            let left_tree = self.left.take();
 
-        let new_left_node = new_left_tree.as_mut().unwrap();
-        new_left_node.right = right_left_tree;
-        new_left_node.left = left_tree;
+            if let Some(ref mut new_left_node) = new_left_tree {
+                new_left_node.right = right_left_tree;
+                new_left_node.left = left_tree;
+            } else {
+                panic!();
+            }
 
-        self.left = new_left_tree;
+            self.left = new_left_tree;
 
-        if let Some(node) = self.left.as_mut() {
-            node.update_height();
+            if let Some(ref mut node) = self.left {
+                node.update_height();
+            }
+
+            self.update_height();
+
+            true
+        } else {
+            panic!();
         }
-
-        self.update_height();
-
-        true
     }
 
     fn rebalance(&mut self) -> bool {
         match self.balance_factor() {
             -2 => {
-                let right_node = self.right.as_mut().unwrap();
-
-                if right_node.balance_factor() == 1 {
-                    right_node.rotate_right();
+                if let Some(ref mut right_node) = self.right {
+                    if right_node.balance_factor() == 1 {
+                        right_node.rotate_right();
+                    }
+                } else {
+                    panic!();
                 }
 
                 self.rotate_left();
@@ -145,10 +168,12 @@ impl<T> AVLNode<T> {
                 true
             }
             2 => {
-                let left_node = self.left.as_mut().unwrap();
-
-                if left_node.balance_factor() == 1 {
-                    left_node.rotate_left();
+                if let Some(ref mut left_node) = self.left {
+                    if left_node.balance_factor() == 1 {
+                        left_node.rotate_left();
+                    }
+                } else {
+                    panic!();
                 }
 
                 self.rotate_right();
