@@ -1,32 +1,5 @@
-fn max<'a, T: Ord>(a: &'a T, b: &'a T) -> &'a T {
-    match a.cmp(b) {
-        Ordering::Less => b,
-        Ordering::Equal => b,
-        Ordering::Greater => a
-    }
-}
-
-impl Ord for usize {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if *self < *other {
-            Ordering::Less
-        } else if *self == *other {
-            Ordering::Equal
-        } else {
-            Ordering::Greater
-        }
-    }
-}
-
-pub enum Ordering {
-    Less,
-    Equal,
-    Greater,
-}
-
-trait Ord {
-    fn cmp(&self, other: &Self) -> Ordering;
-}
+use core::cmp::Ordering;
+use core::cmp::max;
 
 // TODO: la structure AVLNode est extrait comme un inductif à un cas
 // au lieu d'être extrait comme une structure
@@ -49,11 +22,19 @@ impl<T> AVLNode<T> {
     }
 
     fn left_height(&self) -> usize {
-        self.left.as_ref().map_or(0, |left| left.height())
+        if let Some(left) = self.left.as_ref() {
+            left.height()
+        } else {
+            0
+        }
     }
 
     fn right_height(&self) -> usize {
-        self.right.as_ref().map_or(0, |right| right.height())
+        if let Some(right) = self.right.as_ref() {
+            right.height()
+        } else {
+            0
+        }
     }
 
     fn balance_factor(&self) -> i8 {
@@ -177,7 +158,7 @@ impl<T: Ord> AVLTreeSet<T> {
         false
     }
 
-    pub fn insert(&mut self, value: T) -> bool {
+    fn insert_phase1(&mut self, value: T) -> bool {
         let mut current_tree = &mut self.root;
 
         while let Some(current_node) = current_tree {
@@ -189,7 +170,6 @@ impl<T: Ord> AVLTreeSet<T> {
             }
         }
 
-        
         *current_tree = Some(Box::new(AVLNode {
             value,
             left: None,
@@ -197,6 +177,10 @@ impl<T: Ord> AVLTreeSet<T> {
             height: 0
         }));
 
+        true
+    }
+
+    fn insert_rebalance_left(&mut self) {
         let mut current_tree = &mut self.root;
 
         while let Some(current_node) = current_tree {
@@ -204,28 +188,27 @@ impl<T: Ord> AVLTreeSet<T> {
             current_node.rebalance();
             current_tree = &mut current_node.left;
         }
+    }
 
-        current_tree = &mut self.root;
+    fn insert_rebalance_right(&mut self) {
+        let mut current_tree = &mut self.root;
 
         while let Some(current_node) = current_tree {
             current_node.update_height();
             current_node.rebalance();
             current_tree = &mut current_node.right;
         }
-
-        true
     }
-}
 
-impl Ord for u32 {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if *self < *other {
-            Ordering::Less
-        } else if *self == *other {
-            Ordering::Equal
-        } else {
-            Ordering::Greater
+    pub fn insert(&mut self, value: T) -> bool {
+        if !self.insert_phase1(value) {
+            return false;
         }
+
+        self.insert_rebalance_left();
+        self.insert_rebalance_right();
+       
+        true
     }
 }
 
