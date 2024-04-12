@@ -3,3 +3,4 @@
 /lakefile.olean
 /lake-packages/*
 .lake
+*.llbc
