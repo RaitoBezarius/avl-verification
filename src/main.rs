@@ -1,5 +1,32 @@
-use core::cmp::Ordering;
-use core::cmp::max;
+fn max<'a, T: Ord>(a: &'a T, b: &'a T) -> &'a T {
+    match a.cmp(b) {
+        Ordering::Less => b,
+        Ordering::Equal => b,
+        Ordering::Greater => a,
+    }
+}
+
+impl Ord for usize {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if *self < *other {
+            Ordering::Less
+        } else if *self == *other {
+            Ordering::Equal
+        } else {
+            Ordering::Greater
+        }
+    }
+}
+
+pub enum Ordering {
+    Less,
+    Equal,
+    Greater,
+}
+
+trait Ord {
+    fn cmp(&self, other: &Self) -> Ordering;
+}
 
 // TODO: la structure AVLNode est extrait comme un inductif à un cas
 // au lieu d'être extrait comme une structure
@@ -9,7 +36,7 @@ struct AVLNode<T> {
     right: AVLTree<T>,
 
     // Memoized height.
-    height: usize
+    height: usize,
 }
 
 impl<T> AVLNode<T> {
@@ -116,7 +143,7 @@ impl<T> AVLNode<T> {
                 self.rotate_left();
 
                 true
-            },
+            }
             2 => {
                 let left_node = self.left.as_mut().unwrap();
 
@@ -127,8 +154,8 @@ impl<T> AVLNode<T> {
                 self.rotate_right();
 
                 true
-            },
-            _ => false
+            }
+            _ => false,
         }
     }
 }
@@ -151,7 +178,7 @@ impl<T: Ord> AVLTreeSet<T> {
             match current_node.value.cmp(&value) {
                 Ordering::Less => current_tree = &current_node.right,
                 Ordering::Equal => return true,
-                Ordering::Greater => current_tree = &current_node.left
+                Ordering::Greater => current_tree = &current_node.left,
             }
         }
 
@@ -174,7 +201,7 @@ impl<T: Ord> AVLTreeSet<T> {
             value,
             left: None,
             right: None,
-            height: 0
+            height: 0,
         }));
 
         true
@@ -207,10 +234,9 @@ impl<T: Ord> AVLTreeSet<T> {
 
         self.insert_rebalance_left();
         self.insert_rebalance_right();
-       
+
         true
     }
 }
 
-fn main() {
-}
+fn main() {}
