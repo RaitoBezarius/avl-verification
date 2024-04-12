@@ -30,7 +30,7 @@ structure AVLTreeSet (T : Type) where
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::new]:
    Source: 'src/main.rs', lines 24:4-24:24 -/
 def AVLTreeSet.new (T : Type) (OrdInst : Ord T) : Result (AVLTreeSet T) :=
-  Result.ret { root := none }
+  Result.ok { root := none }
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::insert]: loop 0:
    Source: 'src/main.rs', lines 28:4-46:5 -/
@@ -41,7 +41,7 @@ divergent def AVLTreeSet.insert_loop
   :=
   match current_tree with
   | none => let a := AVLNode.mk value none none
-            Result.ret (true, some a)
+            Result.ok (true, some a)
   | some current_node =>
     do
     let ⟨ t, current_tree1, current_tree2 ⟩ := current_node
@@ -50,13 +50,13 @@ divergent def AVLTreeSet.insert_loop
     | Ordering.Less =>
       do
       let (b, back) ← AVLTreeSet.insert_loop T OrdInst value current_tree2
-      Result.ret (b, some (AVLNode.mk t current_tree1 back))
+      Result.ok (b, some (AVLNode.mk t current_tree1 back))
     | Ordering.Equal =>
-      Result.ret (false, some (AVLNode.mk t current_tree1 current_tree2))
+      Result.ok (false, some (AVLNode.mk t current_tree1 current_tree2))
     | Ordering.Greater =>
       do
       let (b, back) ← AVLTreeSet.insert_loop T OrdInst value current_tree1
-      Result.ret (b, some (AVLNode.mk t back current_tree2))
+      Result.ok (b, some (AVLNode.mk t back current_tree2))
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::insert]:
    Source: 'src/main.rs', lines 28:4-28:46 -/
@@ -66,17 +66,17 @@ def AVLTreeSet.insert
   :=
   do
   let (b, back) ← AVLTreeSet.insert_loop T OrdInst value self.root
-  Result.ret (b, { root := back })
+  Result.ok (b, { root := back })
 
 /- [avl_verification::{(avl_verification::Ord for u32)#1}::cmp]:
    Source: 'src/main.rs', lines 50:4-50:43 -/
 def OrdU32.cmp (self : U32) (other : U32) : Result Ordering :=
   if self < other
-  then Result.ret Ordering.Less
+  then Result.ok Ordering.Less
   else
     if self = other
-    then Result.ret Ordering.Equal
-    else Result.ret Ordering.Greater
+    then Result.ok Ordering.Equal
+    else Result.ok Ordering.Greater
 
 /- Trait implementation: [avl_verification::{(avl_verification::Ord for u32)#1}]
    Source: 'src/main.rs', lines 49:0-49:16 -/

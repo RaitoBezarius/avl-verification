@@ -5,19 +5,19 @@ namespace Primitives
 namespace Result
 
 def map {A B: Type} (x: Result A) (f: A -> B): Result B := match x with
-| .ret y => .ret (f y)
+| .ok y => .ok (f y)
 | .fail e => .fail e
 | .div => .div
 
 @[inline]
-def isRet {A: Type} : Result A -> Bool
-| .ret _ => true
+def isok {A: Type} : Result A -> Bool
+| .ok _ => true
 | .fail _ => false
 | .div => false
 
 @[inline]
-def get? {A: Type}: (r: Result A) -> isRet r -> A
-| .ret x, _ => x
+def get? {A: Type}: (r: Result A) -> isok r -> A
+| .ok x, _ => x
 
 end Result
 
@@ -30,6 +30,11 @@ def Ordering.toLeanOrdering (o: avl_verification.Ordering): _root_.Ordering := m
 | .Equal => .eq
 | .Greater => .gt
 
+def Ordering.ofLeanOrdering (o: _root_.Ordering): avl_verification.Ordering := match o with
+| .lt => .Less
+| .eq => .Equal
+| .gt => .Greater
+
 end avl_verification
 
 namespace Specifications
@@ -39,42 +44,51 @@ open Result
 
 variable {T: Type} (H: avl_verification.Ord T)
 
+-- TODO: reason about raw bundling vs. refined bundling.
 class OrdSpec where
-  cmp: T -> T -> Result Ordering := fun x y => (H.cmp x y).map (fun z => z.toLeanOrdering)
-  infallible: ∀ a b, ∃ (o: Ordering), cmp a b = .ret o
-
-@[simp]
-theorem OrdSpec.cmpEq {Spec: OrdSpec H}: ∀ x y, Spec.cmp x y = (H.cmp x y).map (fun z => z.toLeanOrdering) := sorry
-
-@[simp]
-theorem OrdSpec.infallibleEq {Spec: OrdSpec H}: ∀ a b, ∃ (o: Ordering), Spec.cmp a b = .ret o <-> ∀ a b, ∃ (o: Ordering), (H.cmp a b).map (fun z => z.toLeanOrdering) = .ret o := sorry
+  infallible: ∀ a b, ∃ (o: avl_verification.Ordering), H.cmp a b = .ok o
+  duality: ∀ a b, H.cmp a b = .ok .Greater -> H.cmp b a = .ok .Less
 
 instance: Coe (avl_verification.Ordering) (_root_.Ordering) where
   coe a := a.toLeanOrdering
 
-def ordSpecOfInfaillible
+def ordSpecOfTotalityAndDuality
   (H: avl_verification.Ord T)
-  (Hresult: ∀ a b, ∃ o, H.cmp a b = Primitives.Result.ret o)
+  (Hresult: ∀ a b, ∃ o, H.cmp a b = Primitives.Result.ok o)
+  (Hduality: ∀ a b, H.cmp a b = .ok .Greater -> H.cmp b a = .ok .Less)
   : OrdSpec H where
-  infallible := by
-    intros a b; cases' (Hresult a b) with o Hcmp; refine' ⟨ o.toLeanOrdering, _ ⟩
-    simp [Result.map, Hcmp]
+  infallible := Hresult
+  duality := Hduality
 
 def ordOfOrdSpec (H: avl_verification.Ord T) (spec: OrdSpec H): Ord T where
-  compare x y := (spec.cmp x y).get? (by
+  compare x y := (H.cmp x y).get? (by
     cases' (spec.infallible x y) with o Hcmp
-    rewrite [isRet, Hcmp]
+    rewrite [isok, Hcmp]
     simp only
   )
 
 theorem ltOfRustOrder {Spec: OrdSpec H}: 
   haveI O := ordOfOrdSpec H Spec
   haveI := @ltOfOrd _ O
-  ∀ a b, H.cmp a b = .ret .Less -> a < b := by
+  ∀ a b, H.cmp a b = .ok .Less -> a < b := by
   intros a b
   intro Hcmp
-  change ((Spec.cmp a b).get? _ == .lt)
-  simp [Hcmp, map, avl_verification.Ordering.toLeanOrdering]
-  simp [get?]
+  rw [LT.lt]
+  simp [ltOfOrd]
+  rw [compare]
+  simp [ordOfOrdSpec]
+  -- https://proofassistants.stackexchange.com/questions/1062/what-does-the-motive-is-not-type-correct-error-mean-in-lean
+  simp_rw [Hcmp, get?, avl_verification.Ordering.toLeanOrdering]
   rfl
+
+theorem gtOfRustOrder {Spec: OrdSpec H}: 
+  haveI O := ordOfOrdSpec H Spec
+  haveI := @ltOfOrd _ O
+  ∀ a b, H.cmp a b = .ok .Greater -> b < a := by
+  intros a b
+  intro Hcmp
+  apply ltOfRustOrder
+  exact (Spec.duality _ _ Hcmp)
+
+
 end Specifications

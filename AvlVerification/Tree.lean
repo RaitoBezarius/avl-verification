@@ -75,7 +75,4 @@ def AVLTree.mem_some {x: T} {left right: AVLTree T}: AVLTree.mem (some (AVLNode.
 
 def AVLTree.set (t: AVLTree T): Set T := _root_.setOf (AVLTree.mem t)
 
-def AVLTree.setOf_left_incl (t: AVLTree T): t.left.set ⊂ t.set := sorry
-def AVLTree.setOf_right_incl (t: AVLTree T): t.right.set ⊂ t.set := sorry
-
 end Tree
