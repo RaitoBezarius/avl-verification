@@ -18,22 +18,30 @@ structure Ord (Self : Type) where
   cmp : Self → Self → Result Ordering
 
 /- [avl_verification::AVLNode]
-   Source: 'src/main.rs', lines 11:0-11:17 -/
+   Source: 'src/main.rs', lines 13:0-13:17 -/
 inductive AVLNode (T : Type) :=
 | mk : T → Option (AVLNode T) → Option (AVLNode T) → AVLNode T
 
 /- [avl_verification::AVLTreeSet]
-   Source: 'src/main.rs', lines 19:0-19:20 -/
+   Source: 'src/main.rs', lines 21:0-21:20 -/
 structure AVLTreeSet (T : Type) where
   root : Option (AVLNode T)
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::new]:
-   Source: 'src/main.rs', lines 24:4-24:24 -/
+   Source: 'src/main.rs', lines 26:4-26:24 -/
 def AVLTreeSet.new (T : Type) (OrdInst : Ord T) : Result (AVLTreeSet T) :=
   Result.ok { root := none }
 
+/- [avl_verification::{avl_verification::AVLTreeSet<T>}::find]:
+   Source: 'src/main.rs', lines 30:4-30:39 -/
+def AVLTreeSet.find
+  (T : Type) (OrdInst : Ord T) (self : AVLTreeSet T) (value : T) :
+  Result Bool
+  :=
+  sorry
+
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::insert]: loop 0:
-   Source: 'src/main.rs', lines 28:4-46:5 -/
+   Source: 'src/main.rs', lines 63:4-81:5 -/
 divergent def AVLTreeSet.insert_loop
   (T : Type) (OrdInst : Ord T) (value : T) (current_tree : Option (AVLNode T))
   :
@@ -49,27 +57,29 @@ divergent def AVLTreeSet.insert_loop
     match o with
     | Ordering.Less =>
       do
-      let (b, back) ← AVLTreeSet.insert_loop T OrdInst value current_tree2
-      Result.ok (b, some (AVLNode.mk t current_tree1 back))
+      let (b, current_tree3) ←
+        AVLTreeSet.insert_loop T OrdInst value current_tree2
+      Result.ok (b, some (AVLNode.mk t current_tree1 current_tree3))
     | Ordering.Equal =>
       Result.ok (false, some (AVLNode.mk t current_tree1 current_tree2))
     | Ordering.Greater =>
       do
-      let (b, back) ← AVLTreeSet.insert_loop T OrdInst value current_tree1
-      Result.ok (b, some (AVLNode.mk t back current_tree2))
+      let (b, current_tree3) ←
+        AVLTreeSet.insert_loop T OrdInst value current_tree1
+      Result.ok (b, some (AVLNode.mk t current_tree3 current_tree2))
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::insert]:
-   Source: 'src/main.rs', lines 28:4-28:46 -/
+   Source: 'src/main.rs', lines 63:4-63:46 -/
 def AVLTreeSet.insert
   (T : Type) (OrdInst : Ord T) (self : AVLTreeSet T) (value : T) :
   Result (Bool × (AVLTreeSet T))
   :=
   do
-  let (b, back) ← AVLTreeSet.insert_loop T OrdInst value self.root
-  Result.ok (b, { root := back })
+  let (b, as) ← AVLTreeSet.insert_loop T OrdInst value self.root
+  Result.ok (b, { root := as })
 
 /- [avl_verification::{(avl_verification::Ord for u32)#1}::cmp]:
-   Source: 'src/main.rs', lines 50:4-50:43 -/
+   Source: 'src/main.rs', lines 85:4-85:43 -/
 def OrdU32.cmp (self : U32) (other : U32) : Result Ordering :=
   if self < other
   then Result.ok Ordering.Less
@@ -79,7 +89,7 @@ def OrdU32.cmp (self : U32) (other : U32) : Result Ordering :=
     else Result.ok Ordering.Greater
 
 /- Trait implementation: [avl_verification::{(avl_verification::Ord for u32)#1}]
-   Source: 'src/main.rs', lines 49:0-49:16 -/
+   Source: 'src/main.rs', lines 84:0-84:16 -/
 def OrdU32 : Ord U32 := {
   cmp := OrdU32.cmp
 }

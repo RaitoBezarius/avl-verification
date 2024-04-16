@@ -27,6 +27,19 @@ impl<T: Ord> AVLTreeSet<T> {
         Self { root: None }
     }
 
+    pub fn find(self, value: T) -> bool {
+        let mut current_tree = &self.root;
+
+        while let Some(current_node) = current_tree {
+            match current_node.value.cmp(&value) {
+                Ordering::Less => current_tree = &current_node.right,
+                Ordering::Equal => return true,
+                Ordering::Greater => current_tree = &current_node.left,
+            }
+        }
+
+        false
+    }
     pub fn insert(&mut self, value: T) -> bool {
         let mut current_tree = &mut self.root;
 
