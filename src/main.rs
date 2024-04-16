@@ -1,32 +1,5 @@
-fn max<T: Ord + Copy>(a: T, b: T) -> T {
-    match a.cmp(&b) {
-        Ordering::Less => b,
-        Ordering::Equal => b,
-        Ordering::Greater => a,
-    }
-}
-
-impl Ord for usize {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if *self < *other {
-            Ordering::Less
-        } else if *self == *other {
-            Ordering::Equal
-        } else {
-            Ordering::Greater
-        }
-    }
-}
-
-pub enum Ordering {
-    Less,
-    Equal,
-    Greater,
-}
-
-trait Ord {
-    fn cmp(&self, other: &Self) -> Ordering;
-}
+use core::cmp::Ordering;
+use core::cmp::max;
 
 // TODO: la structure AVLNode est extrait comme un inductif à un cas
 // au lieu d'être extrait comme une structure
