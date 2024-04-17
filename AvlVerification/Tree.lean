@@ -74,6 +74,7 @@ def AVLTree.mem_some {x: T} {left right: AVLTree T}: AVLTree.mem (some (AVLNode.
 -- TODO(reinforcement): ∪ is actually disjoint if we prove this is a binary search tree.
 
 def AVLTree.set (t: AVLTree T): Set T := _root_.setOf (AVLTree.mem t)
+def AVLTree.qset (s: Setoid T) (t: AVLTree T): Set (Quotient s) := (Quotient.mk s '' t.set)
 
 @[simp]
 def AVLTree.set_some {x: T} {left right: AVLTree T}: AVLTree.set (some (AVLNode.mk x left right)) = {x} ∪ AVLTree.set left ∪ AVLTree.set right := sorry

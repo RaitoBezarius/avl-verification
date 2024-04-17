@@ -7,7 +7,7 @@ namespace Implementation
 open Primitives
 open avl_verification
 open Tree (AVLTree AVLTree.set)
-open Specifications (OrdSpecDualityEq ordOfOrdSpec ltOfRustOrder gtOfRustOrder)
+open Specifications (OrdSpecDualityEq OrdSpecDualityRel ordOfOrdSpec ltOfRustOrder gtOfRustOrder)
 
 -- example: OrdSpec OrdU32 := ordSpecOfTotalityAndDuality _ 
 --   (by 
@@ -48,7 +48,7 @@ open Specifications (OrdSpecDualityEq ordOfOrdSpec ltOfRustOrder gtOfRustOrder)
 --     -- I need a Preorder on U32 now.
 --     sorry)
 
-variable (T: Type) (H: avl_verification.Ord T) (Ospec: @OrdSpecDualityEq T H)
+variable (T: Type) (s: Setoid T) (L: Quotient s) (H: avl_verification.Ord T) (Ospec: @OrdSpecDualityRel T H s.r)
 
 @[pspec]
 theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
@@ -100,10 +100,10 @@ lemma AVLTreeSet.insert_loop_spec_global
   (a: T) (t: Option (AVLNode T))
   :
   BST.Invariant t -> ∃ added t_new, AVLTreeSet.insert_loop T H a t = Result.ok ⟨ added, t_new ⟩
-  ∧ BST.Invariant t_new ∧ AVLTree.set t_new = {a} ∪ AVLTree.set t := by 
+  ∧ BST.Invariant t_new ∧ AVLTree.qset s t_new = {Quotient.mk s a} ∪ AVLTree.qset s t := by 
   intro Hbst
   match t with
-  | none => simp [AVLTreeSet.insert_loop, AVLTree.set, setOf]
+  | none => simp [AVLTreeSet.insert_loop, AVLTree.qset, AVLTree.set, setOf]
   | some (AVLNode.mk b left right) =>
     rw [AVLTreeSet.insert_loop]
     simp only []
@@ -134,7 +134,7 @@ lemma AVLTreeSet.insert_loop_spec_global
     {
       simp; split_conjs
       . tauto
-      . simp [Ospec.equivalence _ _ Hordering]
+      . simp [AVLTree.qset, Ospec.equivalence _ _ Hordering]
     }
     {
       have ⟨ added₂, left₂, ⟨ H_result, ⟨ H_bst, H_set ⟩ ⟩ ⟩ := AVLTreeSet.insert_loop_spec_global a left (BST.left Hbst)
@@ -152,7 +152,7 @@ lemma AVLTreeSet.insert_loop_spec_global
       convert H_bst
       exact H_result.2
       exact H_bst_right
-      simp [AVLTree.set_some]
+      simp [AVLTree.qset, AVLTree.set_some]
       rewrite [H_result.2, H_set]
       simp [Set.singleton_union, Set.insert_comm, Set.insert_union]
     }
@@ -163,7 +163,7 @@ def AVLTreeSet.insert_spec
   BST.Invariant t.root -> (∃ t' added,t.insert _ H a = Result.ok (added, t')
   -- it's still a binary search tree.
   ∧ BST.Invariant t'.root
-  ∧ AVLTree.set t'.root = {a} ∪ AVLTree.set t.root)
+  ∧ AVLTree.qset s t'.root = {Quotient.mk s a} ∪ AVLTree.qset s t.root)
   := by
   rw [AVLTreeSet.insert]; intro Hbst
   progress keep h as ⟨ t', Hset ⟩; 
