@@ -123,3 +123,8 @@ Source: 'src/main.rs', lines 132:4-158:5
 [Error] There should be no bottoms in the value
 Source: 'src/main.rs', lines 175:52-181:9
 ```
+
+## Réunion
+
+- Prédicat avec `setOf`: OK.
+- `ForallNode` négatif pour exclure l'appartenance d'un élément à l'arbre

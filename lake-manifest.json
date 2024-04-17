@@ -67,7 +67,7 @@
   {"url": "https://github.com/AeneasVerif/aeneas",
    "type": "git",
    "subDir": "backends/lean",
-   "rev": "03a175b423c9ccff2160300c4d349978f9b1aeb9",
+   "rev": "23da71768c03d955c916635bfc5c9d5806a80187",
    "name": "base",
    "manifestFile": "lake-manifest.json",
    "inputRev": "main",
