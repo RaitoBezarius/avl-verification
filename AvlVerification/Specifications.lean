@@ -53,14 +53,10 @@ class OrdSpecInfaillible where
 class OrdSpecDuality extends OrdSpecInfaillible H where
   duality: ∀ a b, H.cmp a b = .ok .Greater -> H.cmp b a = .ok .Less
 
--- TODO: OrdSpecEq := OrdSpecRel (R := Eq).
-class OrdSpecEq extends OrdSpecInfaillible H where
-  equality: ∀ a b, H.cmp a b = .ok .Equal -> a = b
-
 class OrdSpecRel (R: outParam (T -> T -> Prop)) extends OrdSpecInfaillible H where
   equivalence: ∀ a b, H.cmp a b = .ok .Equal -> R a b
 
-class OrdSpecDualityEq extends OrdSpecDuality H, OrdSpecEq H
+class OrdSpecDualityEq extends OrdSpecDuality H, OrdSpecRel H Eq
 
 instance: Coe (avl_verification.Ordering) (_root_.Ordering) where
   coe a := a.toLeanOrdering

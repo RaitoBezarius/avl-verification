@@ -134,7 +134,7 @@ lemma AVLTreeSet.insert_loop_spec_global
     {
       simp; split_conjs
       . tauto
-      . simp [Ospec.equality _ _ Hordering]
+      . simp [Ospec.equivalence _ _ Hordering]
     }
     {
       have ⟨ added₂, left₂, ⟨ H_result, ⟨ H_bst, H_set ⟩ ⟩ ⟩ := AVLTreeSet.insert_loop_spec_global a left (BST.left Hbst)
