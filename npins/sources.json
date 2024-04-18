@@ -1,0 +1,23 @@
+{
+  "pins": {
+    "aeneas": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "RaitoBezarius",
+        "repo": "aeneas"
+      },
+      "branch": "reexport-our-charon",
+      "revision": "d848d314893bdaa2429d809b20d6a27b394e1ce8",
+      "url": "https://github.com/RaitoBezarius/aeneas/archive/d848d314893bdaa2429d809b20d6a27b394e1ce8.tar.gz",
+      "hash": "13nmkxgqnxh2sr9zymx9kc7w15i9jh14dpzzpc4hnc2kqlgvbyav"
+    },
+    "nixpkgs": {
+      "type": "Channel",
+      "name": "nixpkgs-unstable",
+      "url": "https://releases.nixos.org/nixpkgs/nixpkgs-24.05pre612711.2b6ee326ad04/nixexprs.tar.xz",
+      "hash": "1vghd2mmyhzk7nsyi8jcral04nz7zq90lmm8sdspg05cx41wlna5"
+    }
+  },
+  "version": 3
+}
