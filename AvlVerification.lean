@@ -32,6 +32,32 @@ structure AVLTreeSet (T : Type) where
 def AVLTreeSet.new (T : Type) (OrdInst : Ord T) : Result (AVLTreeSet T) :=
   Result.ok { root := none }
 
+/- [avl_verification::{avl_verification::AVLTreeSet<T>}::find]: loop 0:
+   Source: 'src/main.rs', lines 30:4-42:5 -/
+divergent def AVLTreeSet.find_loop
+  (T : Type) (OrdInst : Ord T) (value : T) (current_tree : Option (AVLNode T))
+  :
+  Result Bool
+  :=
+  match current_tree with
+  | none => Result.ok false
+  | some current_node =>
+    do
+    let ⟨ t, current_tree1, current_tree2 ⟩ := current_node
+    let o ← OrdInst.cmp t value
+    match o with
+    | Ordering.Less => AVLTreeSet.find_loop T OrdInst value current_tree2
+    | Ordering.Equal => Result.ok true
+    | Ordering.Greater => AVLTreeSet.find_loop T OrdInst value current_tree1
+
+/- [avl_verification::{avl_verification::AVLTreeSet<T>}::find]:
+   Source: 'src/main.rs', lines 30:4-30:40 -/
+def AVLTreeSet.find
+  (T : Type) (OrdInst : Ord T) (self : AVLTreeSet T) (value : T) :
+  Result Bool
+  :=
+  AVLTreeSet.find_loop T OrdInst value self.root
+
 /- [avl_verification::{avl_verification::AVLTreeSet<T>}::insert]: loop 0:
    Source: 'src/main.rs', lines 43:4-61:5 -/
 divergent def AVLTreeSet.insert_loop
@@ -67,8 +93,8 @@ def AVLTreeSet.insert
   Result (Bool × (AVLTreeSet T))
   :=
   do
-  let (b, u) ← AVLTreeSet.insert_loop T OrdInst value self.root
-  Result.ok (b, { root := u })
+  let (b, as) ← AVLTreeSet.insert_loop T OrdInst value self.root
+  Result.ok (b, { root := as })
 
 /- [avl_verification::{(avl_verification::Ord for u32)#1}::cmp]:
    Source: 'src/main.rs', lines 65:4-65:43 -/
