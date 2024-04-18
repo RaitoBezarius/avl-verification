@@ -27,7 +27,7 @@ impl<T: Ord> AVLTreeSet<T> {
         Self { root: None }
     }
 
-    pub fn find(self, value: T) -> bool {
+    pub fn find(&self, value: T) -> bool {
         let mut current_tree = &self.root;
 
         while let Some(current_node) = current_tree {
