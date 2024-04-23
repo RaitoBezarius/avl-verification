@@ -1,54 +1,15 @@
-import AvlVerification.Tree
-import AvlVerification.BinarySearchTree
-import AvlVerification.Specifications
+import Verification.Tree
+import Verification.BinarySearchTree
+import Verification.Specifications
 
 namespace Implementation
 
 open Primitives
 open avl_verification
 open Tree (AVLTree AVLTree.set)
-open Specifications (OrdSpecDualityEq ordOfOrdSpec ltOfRustOrder gtOfRustOrder)
+open Specifications (OrdSpecLinearOrderEq infallible ltOfRustOrder gtOfRustOrder)
 
--- example: OrdSpec OrdU32 := ordSpecOfTotalityAndDuality _ 
---   (by 
---   -- Totality
---   intro a b
---   unfold Ord.cmp
---   unfold OrdU32
---   unfold OrdU32.cmp
---   if hlt : a < b then 
---     use .Less
---     simp [hlt]
---   else
---     if heq: a = b
---     then
---     use .Equal
---     simp [hlt]
---     rw [heq]
---     -- TODO: simp [hlt, heq] breaks everything???
---     else
---       use .Greater
---       simp [hlt, heq]
---   ) (by 
---   -- Duality
---   intro a b Hgt
---   if hlt : b < a then
---     unfold Ord.cmp
---     unfold OrdU32
---     unfold OrdU32.cmp
---     simp [hlt]
---   else
---     unfold Ord.cmp at Hgt
---     unfold OrdU32 at Hgt
---     unfold OrdU32.cmp at Hgt
---     have hnlt : ¬ (a < b) := sorry
---     have hneq : ¬ (a = b) := sorry
---     exfalso
---     apply hlt
---     -- I need a Preorder on U32 now.
---     sorry)
-
-variable (T: Type) (H: avl_verification.Ord T) (Ospec: @OrdSpecDualityEq T H)
+variable (T: Type) (H: avl_verification.Ord T) [LinearOrder T] (Ospec: OrdSpecLinearOrderEq H)
 
 @[pspec]
 theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
@@ -107,7 +68,7 @@ lemma AVLTreeSet.insert_loop_spec_global
   | some (AVLNode.mk b left right) =>
     rw [AVLTreeSet.insert_loop]
     simp only []
-    have : ∀ a b, ∃ o, H.cmp a b = .ok o := Ospec.infallible
+    have : ∀ a b, ∃ o, H.cmp a b = .ok o := infallible H
     progress keep Hordering as ⟨ ordering ⟩
     cases ordering
     all_goals simp only []
