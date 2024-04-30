@@ -121,29 +121,13 @@ def AVLNode.balance_factor (T : Type) (self : AVLNode T) : Result I8 :=
     let i1 ← Scalar.cast .I8 i
     -. i1
 
-/- [core::option::{core::option::Option<T>}::is_none]:
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/option.rs', lines 642:4-642:39
-   Name pattern: core::option::{core::option::Option<@T>}::is_none -/
-axiom core.option.Option.is_none (T : Type) : Option T → Result Bool
-
-/- [core::option::{core::option::Option<T>}::take]:
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/option.rs', lines 1675:4-1675:45
-   Name pattern: core::option::{core::option::Option<@T>}::take -/
-axiom core.option.Option.take
-  (T : Type) : Option T → Result ((Option T) × (Option T))
-
-/- [core::mem::swap]:
-   Source: '/rustc/d59363ad0b6391b7fc5bbb02c9ccf9300eef3753/library/core/src/mem/mod.rs', lines 726:0-726:42
-   Name pattern: core::mem::swap -/
-axiom core.mem.swap (T : Type) : T → T → Result (T × T)
-
 /- [avl_verification::{avl_verification::AVLNode<T>#1}::rotate_right]:
    Source: 'src/main.rs', lines 78:4-78:38 -/
 def AVLNode.rotate_right
   (T : Type) (self : AVLNode T) : Result (Bool × (AVLNode T)) :=
   do
   let ⟨ t, o, o1, i ⟩ := self
-  let b ← core.option.Option.is_none (AVLNode T) o
+  let b := Option.isNone o
   if b
   then Result.ok (false, AVLNode.mk t o o1 i)
   else
@@ -152,8 +136,8 @@ def AVLNode.rotate_right
     | some left_node =>
       do
       let ⟨ t1, o2, o3, i1 ⟩ := left_node
-      let (left_right_tree, o4) ← core.option.Option.take (AVLNode T) o3
-      let (left_left_tree, o5) ← core.option.Option.take (AVLNode T) o2
+      let (left_right_tree, o4) := Option.take (AVLNode T) o3
+      let (left_left_tree, o5) := Option.take (AVLNode T) o2
       let (new_right_tree, o6) :=
         core.mem.replace (Option (AVLNode T)) (some (AVLNode.mk t1 o5 o4 i1))
           left_left_tree
@@ -162,8 +146,8 @@ def AVLNode.rotate_right
       | some new_right_tree1 =>
         do
         let ⟨ t2, _, _, i2 ⟩ := new_right_tree1
-        let (t3, t4) ← core.mem.swap T t t2
-        let (right_tree, _) ← core.option.Option.take (AVLNode T) o1
+        let (t3, t4) := core.mem.swap T t t2
+        let (right_tree, _) := Option.take (AVLNode T) o1
         let node ←
           AVLNode.update_height T (AVLNode.mk t4 left_right_tree right_tree i2)
         let self1 ← AVLNode.update_height T (AVLNode.mk t3 o6 (some node) i)
@@ -175,7 +159,7 @@ def AVLNode.rotate_left
   (T : Type) (self : AVLNode T) : Result (Bool × (AVLNode T)) :=
   do
   let ⟨ t, o, o1, i ⟩ := self
-  let b ← core.option.Option.is_none (AVLNode T) o1
+  let b := Option.isNone o1
   if b
   then Result.ok (false, AVLNode.mk t o o1 i)
   else
@@ -184,8 +168,8 @@ def AVLNode.rotate_left
     | some right_node =>
       do
       let ⟨ t1, o2, o3, i1 ⟩ := right_node
-      let (right_left_tree, o4) ← core.option.Option.take (AVLNode T) o2
-      let (right_right_tree, o5) ← core.option.Option.take (AVLNode T) o3
+      let (right_left_tree, o4) := Option.take (AVLNode T) o2
+      let (right_right_tree, o5) := Option.take (AVLNode T) o3
       let (new_left_tree, o6) :=
         core.mem.replace (Option (AVLNode T)) (some (AVLNode.mk t1 o4 o5 i1))
           right_right_tree
@@ -194,8 +178,8 @@ def AVLNode.rotate_left
       | some new_left_tree1 =>
         do
         let ⟨ t2, _, _, i2 ⟩ := new_left_tree1
-        let (t3, t4) ← core.mem.swap T t t2
-        let (left_tree, _) ← core.option.Option.take (AVLNode T) o
+        let (t3, t4) := core.mem.swap T t t2
+        let (left_tree, _) := Option.take (AVLNode T) o
         let node ←
           AVLNode.update_height T (AVLNode.mk t4 left_tree right_left_tree i2)
         let self1 ← AVLNode.update_height T (AVLNode.mk t3 (some node) o6 i)
@@ -320,8 +304,8 @@ def AVLTreeSet.insert_phase1
   Result (Bool × (AVLTreeSet T))
   :=
   do
-  let (b, as) ← AVLTreeSet.insert_phase1_loop T OrdInst value self.root
-  Result.ok (b, { root := as })
+  let (b, u) ← AVLTreeSet.insert_phase1_loop T OrdInst value self.root
+  Result.ok (b, { root := u })
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>#2}::insert_rebalance_left]: loop 0:
    Source: 'src/main.rs', lines 235:4-243:5 -/
@@ -345,8 +329,8 @@ divergent def AVLTreeSet.insert_rebalance_left_loop
 def AVLTreeSet.insert_rebalance_left
   (T : Type) (OrdInst : Ord T) (self : AVLTreeSet T) : Result (AVLTreeSet T) :=
   do
-  let as ← AVLTreeSet.insert_rebalance_left_loop T OrdInst self.root
-  Result.ok { root := as }
+  let u ← AVLTreeSet.insert_rebalance_left_loop T OrdInst self.root
+  Result.ok { root := u }
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>#2}::insert_rebalance_right]: loop 0:
    Source: 'src/main.rs', lines 245:4-253:5 -/
@@ -370,8 +354,8 @@ divergent def AVLTreeSet.insert_rebalance_right_loop
 def AVLTreeSet.insert_rebalance_right
   (T : Type) (OrdInst : Ord T) (self : AVLTreeSet T) : Result (AVLTreeSet T) :=
   do
-  let as ← AVLTreeSet.insert_rebalance_right_loop T OrdInst self.root
-  Result.ok { root := as }
+  let u ← AVLTreeSet.insert_rebalance_right_loop T OrdInst self.root
+  Result.ok { root := u }
 
 /- [avl_verification::{avl_verification::AVLTreeSet<T>#2}::insert]:
    Source: 'src/main.rs', lines 255:4-255:46 -/
