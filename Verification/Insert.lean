@@ -1,6 +1,8 @@
 import Verification.Tree
+import Verification.AVL
 import Verification.BinarySearchTree
 import Verification.Specifications
+import Verification.Extracted
 
 namespace Implementation
 
@@ -18,27 +20,34 @@ theorem AVLTreeSet.insert_loop_spec_local (p: T -> Prop)
   ∃ added t_new, AVLTreeSet.insert_loop T H a t = Result.ok ⟨ added, t_new ⟩
 --  ∧ AVLTree.set t'.2 = insert a (AVLTree.set t)
   ∧ (BST.ForallNode p t -> p a -> BST.ForallNode p t_new)
+  ∧ (AVLTree.isAVL t -> AVLTree.isAVL t_new)
   := by match t with
   | none =>
     simp [AVLTreeSet.insert_loop, AVLTree.set, setOf]
+    split_conjs
     intros _ Hpa
     constructor; all_goals try simp [BST.ForallNode.none]
     exact Hpa
-  | some (AVLNode.mk b left right) =>
+    simp [AVLTree.isAVL, AVLTree.balancingFactor]
+  | some (AVLNode.mk b left right h) =>
     rw [AVLTreeSet.insert_loop]
     simp only []
     progress keep Hordering as ⟨ ordering ⟩
     cases ordering
     all_goals simp only []
     {
-      progress keep Htree as ⟨ added₁, right₁, Hnode ⟩
+      progress keep Htree as ⟨ added₁, right₁, Hnode ⟩ -- deep destructure is not working
+      rcases Hnode with ⟨ Hnode, Havl ⟩
       refine' ⟨ added₁, ⟨ some (AVLNode.mk b left right₁), _ ⟩ ⟩
       simp only [true_and]
+      split_conj
       intros Hptree Hpa
       constructor
       exact Hptree.left
       exact Hptree.label
       exact Hnode Hptree.right Hpa
+      intro Havl_tree
+      simp [AVLTree.isAVL, AVLTree.balancingFactor]
     }
     {
       simp; tauto
@@ -65,7 +74,7 @@ lemma AVLTreeSet.insert_loop_spec_global
   intro Hbst
   match t with
   | none => simp [AVLTreeSet.insert_loop, AVLTree.set, setOf]
-  | some (AVLNode.mk b left right) =>
+  | some (AVLNode.mk b left right _) =>
     rw [AVLTreeSet.insert_loop]
     simp only []
     have : ∀ a b, ∃ o, H.cmp a b = .ok o := infallible H
