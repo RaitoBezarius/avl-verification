@@ -1,4 +1,5 @@
 import Verification.Specifications
+import Verification.Extracted
 
 namespace Implementation
 
@@ -20,11 +21,12 @@ instance : LinearOrder (Scalar .U32) where
     right; exact (Scalar.le_equiv _ _).2 H
   decidableLE := ScalarU32DecidableLE
 
-instance : OrdSpecLinearOrderEq OrdU32 where
+-- OrdU32 does not exist anymore, it's OrdUsize, this crashes in a weird way.
+instance : OrdSpecLinearOrderEq OrdUsize where
   infallible := fun a b => by
     unfold Ord.cmp
-    unfold OrdU32
-    unfold OrdU32.cmp
+    unfold OrdUsize
+    unfold OrdUsize.cmp
     rw [LinearOrder.compare_eq_compareOfLessAndEq, compareOfLessAndEq]
     if hlt : a < b then 
       use .Less
@@ -51,7 +53,7 @@ instance : OrdSpecLinearOrderEq OrdU32 where
     cases (lt_trichotomy a b) <;> tauto
   equivalence := fun a b => by
     unfold Ord.cmp
-    unfold OrdU32
-    unfold OrdU32.cmp
+    unfold OrdUsize
+    unfold OrdUsize.cmp
     simp only []
     split_ifs <;> simp only [Result.ok.injEq, not_false_eq_true, neq_imp, IsEmpty.forall_iff]; tauto; try assumption
