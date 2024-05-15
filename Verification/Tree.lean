@@ -40,13 +40,33 @@ def AVLNode.memoized_height (t: AVLNode T): Primitives.Scalar .Usize := match t 
 | AVLNode.mk _ _ _ h => h
 
 mutual
-def AVLTree.height_node (tree: AVLNode T): Nat := match tree with
-| AVLNode.mk y left right _ => 1 + AVLTree.height left + AVLTree.height right
+def AVLTree.height_node: AVLNode T -> Nat
+| AVLNode.mk y left right _ => 1 + max (AVLTree.height left) (AVLTree.height right)
 
-def AVLTree.height (tree: AVLTree T): Nat := match tree with 
+def AVLTree.height: AVLTree T -> Nat
 | none => 0
-| some n => 1 + AVLTree.height_node n
+| some n => AVLTree.height_node n
 end
+
+def AVLNode.height_left_lt_tree (left: AVLNode T) {right: AVLTree T}: AVLTree.height_node left < AVLTree.height_node (AVLNode.mk x (some left) right h) := by 
+  simp [AVLTree.height_node]
+  rw [AVLTree.height, Nat.add_comm, Nat.add_one]
+  exact Nat.lt_succ_of_le (le_max_left _ _)
+
+def AVLNode.height_right_lt_tree (right: AVLNode T) {left: AVLTree T}: AVLTree.height_node right < AVLTree.height_node (AVLNode.mk x left (some right) h) := by 
+  simp [AVLTree.height_node]
+  rw [AVLTree.height, Nat.add_comm, Nat.add_one]
+  exact Nat.lt_succ_of_le (le_max_right _ _)
+
+def AVLTree.height_left_lt_tree (left right: AVLTree T): AVLTree.height left < AVLTree.height (some (AVLNode.mk x left right h)) := by 
+  match left with 
+  | none => simp [height, height_node]
+  | some left => simp [height, AVLNode.height_left_lt_tree left]
+
+def AVLTree.height_right_lt_tree (left right: AVLTree T): AVLTree.height right < AVLTree.height (some (AVLNode.mk x left right h)) := by 
+  match right with 
+  | none => simp [height, height_node]
+  | some right => simp [height, AVLNode.height_right_lt_tree right]
 
 def AVLTreeSet.nil: AVLTreeSet T := { root := AVLTree.nil }
 
