@@ -13,6 +13,24 @@ open BST (AVLNode.mk')
 
 variable (t: AVLNode T) [O: LinearOrder T] (Tcopy: core.marker.Copy T) (H: avl_verification.Ord T)
 
+
+instance (ty: ScalarTy) : InBounds ty 0 where
+  hInBounds := by
+    induction ty <;> simp [Scalar.cMax, Scalar.cMin, Scalar.max, Scalar.min] <;> decide
+
+theorem Scalar.zero_le_unsigned {ty} (s: ¬ ty.isSigned) (x: Scalar ty): Scalar.ofInt 0 ≤ x := by
+  apply (Scalar.le_equiv _ _).2
+  convert x.hmin
+  cases ty <;> simp [ScalarTy.isSigned] at s <;> simp [Scalar.min]
+
+@[simp]
+theorem Scalar.max_unsigned_left_zero_eq {ty} (s: ¬ ty.isSigned) (x: Scalar ty):
+  Max.max (Scalar.ofInt 0) x = x := max_eq_right (Scalar.zero_le_unsigned s x)
+
+@[simp]
+theorem Scalar.max_unsigned_right_zero_eq {ty} (s: ¬ ty.isSigned) (x: Scalar ty):
+  Max.max x (Scalar.ofInt 0) = x := max_eq_left (Scalar.zero_le_unsigned s x)
+
 @[pspec]
 def max_spec {a b: T}: ∃ o, avl_verification.max _ H Tcopy a b = .ok o ∧ o = O.max a b := sorry
 
@@ -63,10 +81,10 @@ def AVLNode.height_spec (t: AVLNode T): AVLTree.height_node t ≤ Scalar.max .Us
           push_cast
           refine' Int.add_le_add_left _ _
           exact Int.le_max_right _ _
-        have Hmax: Max.max 0#usize w = w := by sorry
-        rw [Hmax]
+        rw [Scalar.max_unsigned_left_zero_eq]
         progress with Usize.add_spec as ⟨ X, Hx ⟩
         simp [Hx, Hw]
+        simp [ScalarTy.isSigned]
         -- TODO: render invariant by commutativity.
     -- (some ., none) case, above.
     . sorry
