@@ -15,13 +15,22 @@ def AVLTree.val (t: AVLTree T): Option T := match t with
 | none => none
 | some (AVLNode.mk x _ _ _) => some x
 
+@[simp]
+lemma AVLTree.val_of_mk {x: T} {left right: AVLTree T}: AVLTree.val (AVLNode.mk x left right h) = .some x := rfl
+
 def AVLTree.left (t: AVLTree T): AVLTree T := match t with
 | none => none
 | some (AVLNode.mk _ left _ _) => left
 
+@[simp]
+lemma AVLTree.left_of_mk {x: T} {left right: AVLTree T}: AVLTree.left (AVLNode.mk x left right h) = left := rfl
+
 def AVLTree.right (t: AVLTree T): AVLTree T := match t with
 | none => none
 | some (AVLNode.mk _ _ right _) => right
+
+@[simp]
+lemma AVLTree.right_of_mk {x: T} {left right: AVLTree T}: AVLTree.right (AVLNode.mk x left right h) = right := rfl
 
 def AVLTree.memoized_height (t: AVLTree T): Primitives.Scalar .Usize := match t with
 | none => 0#usize
@@ -30,11 +39,20 @@ def AVLTree.memoized_height (t: AVLTree T): Primitives.Scalar .Usize := match t 
 def AVLNode.left (t: AVLNode T): AVLTree T := match t with
 | AVLNode.mk _ left _ _ => left
 
+@[simp]
+lemma AVLNode.left_of_mk {x: T} {left right: AVLTree T}: AVLNode.left (AVLNode.mk x left right h) = left := rfl
+
 def AVLNode.right (t: AVLNode T): AVLTree T := match t with
 | AVLNode.mk _ _ right _ => right
 
+@[simp]
+lemma AVLNode.right_of_mk {x: T} {left right: AVLTree T}: AVLNode.right (AVLNode.mk x left right h) = right := rfl
+
 def AVLNode.val (t: AVLNode T): T := match t with
 | AVLNode.mk x _ _ _ => x
+
+@[simp]
+lemma AVLNode.val_of_mk {x: T} {left right: AVLTree T}: AVLNode.val (AVLNode.mk x left right h) = x := rfl
 
 def AVLNode.memoized_height (t: AVLNode T): Primitives.Scalar .Usize := match t with 
 | AVLNode.mk _ _ _ h => h
@@ -48,25 +66,42 @@ def AVLTree.height: AVLTree T -> Nat
 | some n => AVLTree.height_node n
 end
 
+@[simp]
+def AVLTree.height_of_some {t: AVLNode T}: AVLTree.height (some t) = AVLTree.height_node t := by simp [AVLTree.height]
+
+@[simp]
+def AVLTree.height_node_of_mk {left right: AVLTree T}: AVLTree.height_node (AVLNode.mk x left right h) = 1 + max (AVLTree.height left) (AVLTree.height right) := by simp [AVLTree.height_node]
+
+def AVLTree.height_node_eq (t: AVLNode T): AVLTree.height_node t = 1 + max (AVLTree.height (AVLNode.left t)) (AVLTree.height (AVLNode.right t)) := by sorry
+
 def AVLNode.height_left_lt_tree (left: AVLNode T) {right: AVLTree T}: AVLTree.height_node left < AVLTree.height_node (AVLNode.mk x (some left) right h) := by 
-  simp [AVLTree.height_node]
-  rw [AVLTree.height, Nat.add_comm, Nat.add_one]
+  simp only [AVLTree.height_node_of_mk, AVLTree.height_of_some]
+  rw [Nat.add_comm, Nat.add_one]
   exact Nat.lt_succ_of_le (le_max_left _ _)
 
 def AVLNode.height_right_lt_tree (right: AVLNode T) {left: AVLTree T}: AVLTree.height_node right < AVLTree.height_node (AVLNode.mk x left (some right) h) := by 
-  simp [AVLTree.height_node]
-  rw [AVLTree.height, Nat.add_comm, Nat.add_one]
+  simp only [AVLTree.height_node_of_mk, AVLTree.height_of_some]
+  rw [Nat.add_comm, Nat.add_one]
   exact Nat.lt_succ_of_le (le_max_right _ _)
 
 def AVLTree.height_left_lt_tree (left right: AVLTree T): AVLTree.height left < AVLTree.height (some (AVLNode.mk x left right h)) := by 
   match left with 
   | none => simp [height, height_node]
-  | some left => simp [height, AVLNode.height_left_lt_tree left]
+  | some left => simp only [height, AVLNode.height_left_lt_tree left]
+
+def AVLTree.height_left_lt_tree' (t: AVLNode T): AVLTree.height (AVLNode.left t) < AVLTree.height (some t) := by 
+  match t with 
+  | AVLNode.mk _ left right h => simp only [AVLNode.left, AVLTree.height_left_lt_tree]
 
 def AVLTree.height_right_lt_tree (left right: AVLTree T): AVLTree.height right < AVLTree.height (some (AVLNode.mk x left right h)) := by 
   match right with 
   | none => simp [height, height_node]
-  | some right => simp [height, AVLNode.height_right_lt_tree right]
+  | some right => simp only [height, AVLNode.height_right_lt_tree right]
+
+def AVLTree.height_right_lt_tree' (t: AVLNode T): AVLTree.height (AVLNode.right t) < AVLTree.height (some t) := by 
+  match t with 
+  | AVLNode.mk _ left right h => simp only [AVLNode.right, AVLTree.height_right_lt_tree]
+
 
 def AVLTreeSet.nil: AVLTreeSet T := { root := AVLTree.nil }
 
