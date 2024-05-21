@@ -24,15 +24,18 @@ theorem Scalar.zero_le_unsigned {ty} (s: ¬ ty.isSigned) (x: Scalar ty): Scalar.
   cases ty <;> simp [ScalarTy.isSigned] at s <;> simp [Scalar.min]
 
 @[simp]
-theorem Scalar.max_unsigned_left_zero_eq {ty} (s: ¬ ty.isSigned) (x: Scalar ty):
-  Max.max (Scalar.ofInt 0) x = x := max_eq_right (Scalar.zero_le_unsigned s x)
+theorem Scalar.max_unsigned_left_zero_eq {ty} [s: Fact (¬ ty.isSigned)] (x: Scalar ty):
+  Max.max (Scalar.ofInt 0) x = x := max_eq_right (Scalar.zero_le_unsigned s.out x)
 
 @[simp]
-theorem Scalar.max_unsigned_right_zero_eq {ty} (s: ¬ ty.isSigned) (x: Scalar ty):
-  Max.max x (Scalar.ofInt 0) = x := max_eq_left (Scalar.zero_le_unsigned s x)
+theorem Scalar.max_unsigned_right_zero_eq {ty} [s: Fact (¬ ty.isSigned)] (x: Scalar ty):
+  Max.max x (Scalar.ofInt 0) = x := max_eq_left (Scalar.zero_le_unsigned s.out x)
+
+@[ext]
+theorem Scalar.ext {ty} (a b: Scalar ty): a.val = b.val -> a = b := (Scalar.eq_equiv a b).2
 
 @[pspec]
-def max_spec {a b: T}: ∃ o, avl_verification.max _ H Tcopy a b = .ok o ∧ o = O.max a b := sorry
+def max_spec {a b: T}: ∃ o, avl_verification.max _ H Tcopy a b = .ok o ∧ o = O.max a b := by sorry
 
 @[pspec]
 def AVLNode.left_height_spec
@@ -45,8 +48,8 @@ def AVLNode.right_height_spec
   := by simp only [AVLNode.right_height]
 
 @[simp, norm_cast]
-theorem coe_max {ty: ScalarTy} (a b: Scalar ty): Max.max a b = (Max.max a b: ℤ) := by
-  -- TODO: redo me better because this is a bit weird.
+theorem coe_max {ty: ScalarTy} (a b: Scalar ty): ↑(Max.max a b) = (Max.max (↑a) (↑b): ℤ) := by
+  -- TODO: there should be a shorter way to prove this.
   rw [max_def, max_def]
   split_ifs <;> simp_all
   refine' absurd _ (lt_irrefl a)
@@ -56,14 +59,18 @@ theorem coe_max {ty: ScalarTy} (a b: Scalar ty): Max.max a b = (Max.max a b: ℤ
 @[pspec]
 def AVLNode.height_spec (t: AVLNode T): AVLTree.height_node t ≤ Scalar.max .Usize -> ∃ v, t.height = .ok v ∧ v.val = AVLTree.height_node t
   := by
+  haveI: Fact (¬ ScalarTy.isSigned .Usize) := ⟨by simp [ScalarTy.isSigned]⟩
   intro Hbound
   simp [AVLNode.height]
   match t with 
   | AVLNode.mk x left right h =>
-    rcases Hleft: left with _ | ⟨ a, left_left, left_right, h_left ⟩ <;> rcases Hright: right with _ | ⟨ b, right_left, right_right, h_right ⟩ <;> simp [AVLNode.right_height, AVLNode.left_height] <;> rw [AVLTree.height_node, AVLTree.height]
+    rcases Hleft: left with _ | ⟨ a, left_left, left_right, h_left ⟩ <;> rcases Hright: right with _ | ⟨ b, right_left, right_right, h_right ⟩ <;> simp only [AVLNode.left_height,
+      AVLNode.right_height, bind_tc_ok, max_self, Nat.cast_add,
+      Nat.cast_one]
     -- (none, none) case.
     . progress with max_spec as ⟨ w, Hw ⟩
-      rw [Hw]; use 1#usize; norm_cast
+      simp only [Hw, max_self, AVLTree.height_node_of_mk, Nat.cast_add, Nat.cast_one]
+      use 1#usize; norm_cast
     -- (none, some .) case.
     . progress with height_spec as ⟨ w, Hw ⟩
       . push_cast
@@ -71,7 +78,7 @@ def AVLNode.height_spec (t: AVLNode T): AVLTree.height_node t ≤ Scalar.max .Us
         apply le_of_lt; rw [Hright]
         exact_mod_cast AVLNode.height_right_lt_tree _
       . progress with max_spec as ⟨ M, Hm ⟩
-        rw [Hm, AVLTree.height]
+        rw [Hm]
         have: 1 + w.val ≤ Scalar.max .Usize := by
           rw [Hw]
           refine' le_trans _ Hbound
@@ -81,10 +88,14 @@ def AVLNode.height_spec (t: AVLNode T): AVLTree.height_node t ≤ Scalar.max .Us
           push_cast
           refine' Int.add_le_add_left _ _
           exact Int.le_max_right _ _
-        rw [Scalar.max_unsigned_left_zero_eq]
+        simp only [Scalar.max_unsigned_left_zero_eq, ge_iff_le, zero_le, max_eq_right, Nat.cast_add,
+          Nat.cast_one]
         progress with Usize.add_spec as ⟨ X, Hx ⟩
-        simp [Hx, Hw]
-        simp [ScalarTy.isSigned]
+        simp only [Result.ok.injEq, Nat.cast_add,
+          Nat.cast_one, Nat.cast_max, exists_eq_left', Hx, Scalar.ofInt_val_eq, Hw, add_right_inj]
+        conv =>
+          rhs
+          rw [AVLTree.height_node, AVLTree.height, (max_eq_right (zero_le _)), AVLTree.height]
         -- TODO: render invariant by commutativity.
     -- (some ., none) case, above.
     . sorry
