@@ -123,8 +123,38 @@ def AVLNode.height_spec (t: AVLNode T): AVLTree.height_node t ≤ Scalar.max .Us
 decreasing_by
   all_goals (simp_wf; try simp [Hleft]; try simp [Hright]; try linarith)
 
--- Under bounds, we keep the bounds?
+-- TODO: discharge all bound requirements
+-- by taking (multiple?) hypotheses.
 @[pspec]
-def AVLNode.update_height_spec (x: T) (h: Usize) (left right: AVLTree T): ∃ t_new, AVLNode.update_height _ (AVLNode.mk x left right h) = .ok t_new ∧ t_new = AVLNode.mk' x left right := by sorry
+def AVLNode.update_height_spec (x: T) (h: Usize) (left right: AVLTree T): ∃ t_new, AVLNode.update_height _ (AVLNode.mk x left right h) = .ok t_new ∧ t_new = AVLNode.mk' x left right := by 
+  simp [AVLNode.update_height]
+  haveI: Fact (¬ ScalarTy.isSigned .Usize) := ⟨by simp [ScalarTy.isSigned]⟩
+  rcases Hleft: left with _ | ⟨ a, left_left, left_right, h_left ⟩ <;> rcases Hright: right with _ | ⟨ b, right_left, right_right, h_right ⟩ <;> simp [AVLNode.right_height, AVLNode.left_height]
+  -- TODO: clean up proof structure
+  -- it's always the same.
+  . progress with max_spec as ⟨ w, Hw ⟩
+    rw [Hw]; 
+    progress as ⟨ H, H_height ⟩
+    . simp; sorry -- 1 ≤ Usize.max
+    . simp only [Result.ok.injEq, AVLNode.mk.injEq, true_and]; ext; simp [H_height, AVLTree.height]
+  . progress with height_spec as ⟨ c, Hc ⟩
+    . sorry
+    . progress with max_spec as ⟨ w, Hw ⟩
+      simp at Hw; rw [Hw]; progress as ⟨ H, H_height ⟩; simp; sorry -- 1 + c ≤ Usize.max
+      simp only [Result.ok.injEq, AVLNode.mk.injEq, true_and]; ext; simp [AVLTree.height, H_height, Hc]
+  . progress with height_spec as ⟨ c, Hc ⟩
+    . sorry
+    . progress with max_spec as ⟨ w, Hw ⟩
+      progress as ⟨ H, H_height ⟩
+      . sorry
+      . simp only [Result.ok.injEq, AVLNode.mk.injEq, true_and]; ext; simp [AVLTree.height, H_height, Hw, Hc]
+  . progress with height_spec as ⟨ c, Hc ⟩
+    . sorry
+    . progress with height_spec as ⟨ d, Hd ⟩
+      . sorry
+      . progress with max_spec as ⟨ w, Hw ⟩
+        progress as ⟨ H, H_height ⟩
+        . sorry
+        . simp only [Result.ok.injEq, AVLNode.mk.injEq, true_and]; ext; simp [AVLTree.height, H_height, Hw, Hc, Hd]
 
 end Implementation
