@@ -5,9 +5,17 @@ import Mathlib.Tactic.Group
 
 namespace Implementation
 
-open Tree (AVLTree.balancingFactor AVLTree.isAVL AVLNode.left_of_mk AVLNode.right_of_mk AVLNode.val_of_mk)
+open BST (AVLNode.mk')
+open Tree (AVLTree.balancingFactor AVLTree.balancingFactor_eq AVLTree.isAVL AVLNode.left_of_mk AVLNode.right_of_mk AVLNode.val_of_mk)
 open Primitives
 open avl_verification
+
+-- Here's a bad annoying example
+-- #reduce AVLNode.rotate_right _ (AVLNode.mk' 0 (AVLNode.mk' 1 (AVLNode.mk' 2 none none) (AVLNode.mk' 3 none (AVLNode.mk' 4 none none))) (AVLNode.mk' 5 none none))
+
+-- For mathlib:
+lemma neg_max (a b: ℤ): max a b = -min (-a) (-b) := sorry
+lemma neg_min {a b: ℤ}: min a b = -max (-a) (-b) := sorry
 
 @[pspec]
 theorem AVLNode.balance_factor_spec (self: AVLNode T):
@@ -35,118 +43,101 @@ lemma AVLTree.left_structure_of_nonzero_bf (t: Tree.AVLTree T): 1 ≤ AVLTree.ba
     simp [Tree.AVLTree.balancingFactor, Tree.AVLTree.height] at Ht; linarith [Ht]
   | some (AVLNode.mk x (some left) right h) => refine' ⟨ x, left, right, h, rfl ⟩
 
+lemma AVLTree.right_structure_of_nonzero_bf (t: Tree.AVLTree T): AVLTree.balancingFactor t ≤ -1 -> ∃ x left right h, t = some (AVLNode.mk x left (some right) h) := by 
+  intro Ht
+  match t with 
+  | none => simp [Tree.AVLTree.balancingFactor] at Ht
+  | some (AVLNode.mk x left none h) => 
+    simp [Tree.AVLTree.balancingFactor, Tree.AVLTree.height] at Ht; linarith [Ht]
+  | some (AVLNode.mk x left (some right) h) => refine' ⟨ x, left, right, h, rfl ⟩
+
+lemma AVLTree.left_height_of_bf {left: AVLNode T}: AVLTree.balancingFactor (some left) ≥ 0 -> Tree.AVLTree.height (some left) = 1 + Tree.AVLTree.height (Tree.AVLNode.left left) := by sorry
+
+@[pspec]
+lemma AVLNode.rebalance_spec_positive (left right: Tree.AVLTree T):
+  -- TODO: assume that subtrees are AVL.
+  AVLTree.isAVL left -> AVLTree.isAVL right -> AVLTree.balancingFactor (some $ AVLNode.mk x left right h) = 2 
+    -> ∃ t_new, (AVLNode.mk x left right h).rebalance = .ok (true, t_new) ∧ AVLTree.isAVL (some t_new) := by
+  intro H_left_avl H_right_avl H_balancing
+  simp [AVLNode.rebalance]
+  progress with AVLNode.balance_factor_spec as ⟨ bf, Hbf ⟩
+  cases bf; rw [H_balancing] at Hbf; simp_all
+  rename_i bf_val Hbf_min Hbf_max
+  obtain ⟨ _, left_node, _, _, H_structure ⟩ := AVLTree.left_structure_of_nonzero_bf _ (by rw [H_balancing]; norm_num)
+  rw [Option.some.injEq, AVLNode.mk.injEq] at H_structure
+  replace H_structure := H_structure.2.1
+  simp only [H_structure]
+  progress with AVLNode.balance_factor_spec as ⟨ lbf, Hlbf ⟩
+  split_ifs with Hlbf_rel_one
+  . obtain ⟨ y, left_left, left_right, h', H_left_structure ⟩ := AVLTree.right_structure_of_nonzero_bf (some left_node) (by rw [← Hlbf, Hlbf_rel_one]; norm_cast)
+    rw [Option.some.injEq] at H_left_structure
+    progress with AVLNode.rotate_left_spec as ⟨ rotated₁, t_new₁, H_left_rotation ⟩
+    progress with AVLNode.rotate_right_spec as ⟨ rotated, t_new, H_right_rotation ⟩
+    simp only [H_left_structure, AVLNode.right_of_mk, Option.isNone_some, not_false_eq_true,
+      neq_imp, AVLNode.val_of_mk, AVLNode.left_of_mk, IsEmpty.forall_iff, forall_true_left,
+      true_and] at H_left_rotation
+    replace H_left_rotation := H_left_rotation.2
+    simp only [H_left_rotation, AVLNode.left_of_mk, Option.isNone_some, not_false_eq_true, neq_imp,
+      AVLNode.val_of_mk, AVLNode.right_of_mk, IsEmpty.forall_iff, forall_true_left, true_and] at H_right_rotation
+    replace H_right_rotation := H_right_rotation.2
+    simp [H_right_rotation, AVLTree.isAVL, AVLTree.balancingFactor]
+    set hr := Tree.AVLTree.height right
+    set hlrr := Tree.AVLTree.height (Tree.AVLNode.right left_right)
+    set hlrl := Tree.AVLTree.height (Tree.AVLNode.left left_right)
+    set hll := Tree.AVLTree.height left_left
+    rw [(neg_max hlrr hr), Int.sub_neg, ← min_add_add_left, ← sub_eq_add_neg, ← sub_eq_add_neg]
+    have H_hr : (max hlrl hlrr: ℤ) = hr := by sorry
+    have H_hll : (max hlrl hlrr: ℤ) = hll := by sorry
+    -- bf = hl - hr
+    --    = 1 + hlr - hr because lbf = hll - hlr = -1 ⇒ hll ≤ hlr
+    --    = 1 + (1 + max hlrl hlrr) - hr
+    --    = 2 + max hlrl hlrr - hr
+    --    = 2
+    -- max hlrl hlrr = hr
+    -- hlr = 1 + hll
+    -- 1 + max hlrl hlrr = 1 + hll
+    -- max hlrl hlrr = hll
+    -- max(hll, hlrl) = max(max(hlrl, hlrr), hlrl) = max(hlrl, hlrr)
+    -- max(hll, hlrl) - hr = 0
+    -- max(hlrl, hlrr) - hlrr = max(lbf, 0) = max(-1, 0) = 0
+    -- min(0, 0) = 0
+    -- Min(Max(hll, hlrl) - hlrr, Max(hll, hlrl) - hr)
+    rw [← H_hll, Max.right_comm, max_self, sub_eq_add_neg _ (hlrr: ℤ), ← max_add_add_right, ← sub_eq_add_neg, ← sub_eq_add_neg, H_hr]
+    simp
+  . 
+    -- key: isAVL left ∧ isAVL right ∧ lbf ≠ -1
+    have : lbf.val = 0 ∨ lbf.val = 1 := sorry
+    progress with AVLNode.rotate_right_spec as ⟨ rotated, t_new, H_right_rotation ⟩
+    simp [forall_true_left] at H_right_rotation
+    simp [H_right_rotation.2, AVLTree.isAVL, AVLTree.balancingFactor]
+    set hr := Tree.AVLTree.height right
+    set hlr := Tree.AVLTree.height (Tree.AVLNode.right left_node)
+    set hll := Tree.AVLTree.height (Tree.AVLNode.left left_node)
+    -- key: bf = 1 + hll - hr = 2
+    have bf_eq : (hll: ℤ) - (hr: ℤ) = 1 := by
+      simp [AVLTree.balancingFactor] at H_balancing
+      rw [H_structure, AVLTree.left_height_of_bf (by cases this <;> linarith)] at H_balancing
+      push_cast at H_balancing
+      linarith
+    rw [Int.add_comm, ← Int.sub_sub, (neg_max hlr hr), Int.sub_neg, ← min_add_add_left, ← sub_eq_add_neg, ← sub_eq_add_neg]
+    simp only [AVLTree.balancingFactor_eq, Tree.AVLTree.left_of_some, Tree.AVLTree.right_of_some] at Hlbf
+    rw [← Hlbf, bf_eq]
+    rcases this with (Hlbf_eq | Hlbf_eq) <;> simp [Hlbf_eq]; norm_cast
+
+
 @[pspec]
 theorem AVLNode.rebalance_spec (self: AVLNode T):
-  (AVLTree.balancingFactor (some self)) = 2 ∨ (AVLTree.balancingFactor (some self)) = -2 
+  AVLTree.isAVL (Tree.AVLNode.left self) -> AVLTree.isAVL (Tree.AVLNode.right self) -> (AVLTree.balancingFactor (some self)) = 2 ∨ (AVLTree.balancingFactor (some self)) = -2 
   -> ∃ t_new, self.rebalance = .ok (true, t_new)
       ∧ AVLTree.isAVL (some t_new) := by
+      intro H_avl_left H_avl_right
       rintro (H_balancing | H_balancing)
-      all_goals (simp [AVLNode.rebalance]; progress with AVLNode.balance_factor_spec as ⟨ bf, Hbf ⟩; cases bf; rw [H_balancing] at Hbf; simp_all)
-      . -- there is a left_node because BF = 2.
-        have H_structure: ∃ x left_node right h, self = AVLNode.mk x (some left_node) right h := by
-          convert AVLTree.left_structure_of_nonzero_bf (some self) _
-          . simp only [Option.some.injEq]
-          . rw [H_balancing]; norm_num
-        obtain ⟨ x, left_node, right, h, H_structure ⟩ := H_structure
-        simp [H_structure]
-        progress with AVLNode.balance_factor_spec as ⟨ lbf, Hlbf ⟩
-        split_ifs with Hlbf'
-        . -- destructure left_node because lbf = 1.
-          -- left balancing factor (lbf)
-          have H_left_structure: ∃ x' left_left left_right h', left_node = AVLNode.mk x' (some left_left) left_right h' := by
-            convert AVLTree.left_structure_of_nonzero_bf (some left_node) _
-            . simp only [Option.some.injEq]
-            . rw [← Hlbf, Hlbf']; norm_cast
-          obtain ⟨ x', left_left, left_right, h', H_left_structure ⟩ := H_left_structure
-          rw [H_left_structure]
-          -- TODO: here, we have an annoying problem
-          -- the spec is ill-written, the "or" case should be a true "or" case
-          -- with a ∃ v, AVLTree.right self = .some v instead of letting Lean unify that variable
-          -- right now, it unifies it to left_left instead of left_right because this is the
-          -- only legitimate unification.
-          -- but it's completely wrong.
-          -- as an hack, we could match over left_right before getting to that progress
-          -- and perform a manual simp on rotate_left in case it's a none so we can bring ourself back
-          -- to the case of a single rotation...
-          progress with AVLNode.rotate_left_spec as ⟨ rotated₁, t_new₁, H_left_rotation ⟩
-          progress with AVLNode.rotate_right_spec as ⟨ rotated, t_new, H_right_rotation ⟩
-          rcases H_left_rotation with ⟨ H_none_left_rotation, H_some_left_rotation ⟩
-          rcases H_right_rotation with ⟨ _, H_right_rotation ⟩
-          simp only [Result.ok.injEq, Prod.mk.injEq, true_and, AVLTree.isAVL, exists_eq_left',
-            ge_iff_le]
-          simp only [AVLNode.left_of_mk, AVLNode.val_of_mk, AVLNode.right_of_mk,
-            forall_true_left] at H_right_rotation
-          simp only [AVLTree.balancingFactor, H_right_rotation.2, Tree.AVLTree.height_of_some,
-            Tree.AVLTree.height_node_of_mk, Nat.cast_add, Nat.cast_one, Nat.cast_max]
-
-          set hll := Tree.AVLTree.height_node left_left with H_hll
-          set hl := Tree.AVLTree.height_node left_node with H_hl
-          set hr := Tree.AVLTree.height right with H_hr
-
-          match left_right with
-          | none => 
-            simp only [AVLNode.right_of_mk, Option.isNone_none, AVLNode.val_of_mk,
-              AVLNode.left_of_mk, forall_true_left] at H_none_left_rotation
-            simp [H_none_left_rotation.2]; rw [← H_hll]
-            sorry
-          | some left_right =>
-            simp [forall_true_left] at H_some_left_rotation
-            simp [H_some_left_rotation.2]
-            suffices goal_eq_one: AVLTree.balancingFactor (some t_new) = 1 by 
-              simp [goal_eq_one]; norm_cast
-            -- outline:
-            -- let's denote height lrl = height n.left.right.left, etc.
-            -- we need to prove |1 + max(hll, hlrl) - (1 + max(hlrr, hr))| ≤ 1
-            -- we will prove it's exactly zero.
-            -- by lbf: hll = 1 + hlr
-            -- by bf: hl = 2 + hr
-            -- thus: max(hll, hlrl) = hll
-            -- moreover: hr = 1 + max (hlrl, hlrr).
-            -- thus, we are looking at |1 + hlr - max(hlrr, 1 + max(hlrl, hlrr))|
-            -- but: hr = 1 + max(hlrl, hlrr)
-            -- thus, |1 + max(hlrl, hlrr) - max(hlrr, 1 + max (hlrl, hlrr))|
-            -- in general: |1 + max(x, y) - max(y, 1 + max (x, y))| = 0
-            let hlr := Tree.AVLTree.height_node left_right
-            set hlrl := Tree.AVLTree.height (Tree.AVLNode.left left_right)
-            set hlrr := Tree.AVLTree.height (Tree.AVLNode.right left_right)
-            have lbf_eq: hll = 1 + hlr := by
-              simp [H_left_structure, AVLTree.balancingFactor, Hlbf'] at Hlbf
-              zify; simp [Hlbf]
-            have hlrl_leq_hll: (hlrl : ℤ) ≤ (hll : ℤ) := by
-              norm_cast
-              refine' le_of_lt (Tree.AVLTree.height_left_lt_tree' _)
-              rw [lbf_eq]; linarith
-            have hl_eq: hl = 1 + max hll hlr := by simp [H_hl, H_left_structure]
-            -- TODO(repair): left_right is potentially none
-            -- thus, hlr = 0 ∨ hlr = 1 + max hlrl hlrr (potentially = 1).
-            have hlr_eq: hlr = 1 + max hlrl hlrr := sorry -- Tree.AVLTree.height_node_eq left_right
-            have hr_eq: hr = 1 + max hlrl hlrr := by 
-              simp [H_structure, AVLTree.balancingFactor] at H_balancing
-              suffices hr_eq' : 1 + (1 + hr) = 1 + (1 + (1 + max hlrl hlrr)) by
-                exact (Nat.add_left_cancel $ Nat.add_left_cancel hr_eq')
-              have hlr_leq_hll : hlr ≤ hll := by
-                rw [lbf_eq]; linarith
-              calc
-                  1 + (1 + hr) = hl := by group; zify; simp [H_balancing.symm]
-                  _ = 1 + max hll hlr := by simp [hl_eq]
-                  _ = 1 + hll := by simp [(max_eq_left hlr_leq_hll)]
-                  _ = 1 + (1 + hlr) := by rw [lbf_eq]
-                  _ = 1 + (1 + (1 + max hlrl hlrr)) := by simp [hlr_eq]
-            rw [(max_eq_left hlrl_leq_hll), lbf_eq, hlr_eq, hr_eq]
-            push_cast; rw [Int.add_sub_assoc, (one_add_max_sub_max_one_add_max_cancel (hlrl: ℤ) (hlrr: ℤ) (by scalar_tac) (by scalar_tac)), Int.add_zero]
-          -- progress does not do deep destructuration.
-          . progress with AVLNode.rotate_right_spec as ⟨ rotated, t_new, H_rotation ⟩
-            rcases H_rotation with ⟨ _, H_rotation ⟩
-            simp [AVLTree.isAVL]
-            simp [Tree.AVLNode.left, forall_true_left] at H_rotation
-            -- max (h left) (h right) = h left
-            -- because bf = 2 => h left = h right + 2
-            -- |bf| = |h left - (1 + max (h left) (h right))| = |1| = 1 ≤ 1.
-            -- TODO: prove h left ≥ h right => max (h left) (h right) = h left.
-            simp [H_rotation.2, AVLTree.balancingFactor, Tree.AVLTree.height, Tree.AVLTree.height_node, Tree.AVLTree.height, Tree.AVLNode.right]
-            sorry
+      . match self with 
+        | AVLNode.mk x left right h => 
+          exact AVLNode.rebalance_spec_positive _ _ H_avl_left H_avl_right H_balancing
       -- BF = -2.
-      . sorry
+      . -- Mirror mirror argument time!
+        sorry
 
 
 
