@@ -218,7 +218,7 @@ def AVLNode.rebalance
     | some left_node =>
       do
       let i2 ← AVLNode.balance_factor T left_node
-      if i2 = 1#i8
+      if i2 = (-1)#i8
       then
         do
         let (_, left_node1) ← AVLNode.rotate_left T left_node
