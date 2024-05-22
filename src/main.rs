@@ -169,7 +169,7 @@ impl<T> AVLNode<T> {
             }
             2 => {
                 if let Some(ref mut left_node) = self.left {
-                    if left_node.balance_factor() == 1 {
+                    if left_node.balance_factor() == -1 {
                         left_node.rotate_left();
                     }
                 } else {
