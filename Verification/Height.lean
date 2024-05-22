@@ -135,7 +135,7 @@ def AVLNode.update_height_spec (x: T) (h: Usize) (left right: AVLTree T): ∃ t_
   . progress with max_spec as ⟨ w, Hw ⟩
     rw [Hw]; 
     progress as ⟨ H, H_height ⟩
-    . simp; sorry -- 1 ≤ Usize.max
+    . simp; scalar_tac
     . simp only [Result.ok.injEq, AVLNode.mk.injEq, true_and]; ext; simp [H_height, AVLTree.height]
   . progress with height_spec as ⟨ c, Hc ⟩
     . sorry
