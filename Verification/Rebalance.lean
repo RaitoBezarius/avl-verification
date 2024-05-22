@@ -24,7 +24,32 @@ lemma neg_min {a b: ℤ}: min a b = -max (-a) (-b) := by
 
 @[pspec]
 theorem AVLNode.balance_factor_spec (self: AVLNode T):
-  ∃ f, self.balance_factor = .ok f ∧ f.val = AVLTree.balancingFactor (some self) := by sorry
+  ∃ f, self.balance_factor = .ok f ∧ f.val = AVLTree.balancingFactor (some self) := by 
+  match self with 
+  | AVLNode.mk x left right h =>
+    rcases left with _ | left <;> rcases right with _ | right <;> simp [AVLNode.balance_factor, AVLNode.left_height_spec, AVLNode.right_height_spec]
+    . simp [AVLNode.left_height, AVLNode.right_height]
+      progress as ⟨ y, Hy ⟩
+      simp at Hy
+      simp [AVLTree.balancingFactor]
+      use 0#i8
+      -- TODO: (0#usize) as i8 = .ok 0#i8
+      sorry
+    . simp [AVLNode.left_height]
+      progress
+      . sorry
+      . 
+        -- ¬ (0 ≤ x) is impossible.
+        split_ifs <;> sorry
+    . progress
+      . sorry
+      . simp [AVLNode.right_height]
+        split_ifs <;> sorry
+    . progress as ⟨ hl, Hleft ⟩
+      . sorry
+      . progress as ⟨ hr, Hright ⟩
+        . sorry
+        . split_ifs <;> progress as ⟨ z, Hz ⟩ <;> sorry
 
 -- Useful technical lemma for the height computations.
 lemma one_add_max_sub_max_one_add_max_cancel (x y: ℤ): x ≥ 0 -> y ≥ 0 -> 1 + Max.max x y - Max.max y (1 + Max.max x y) = 0 := by
@@ -152,7 +177,6 @@ lemma AVLNode.rebalance_spec_positive (left right: Tree.AVLTree T):
     simp only [AVLTree.balancingFactor_eq, Tree.AVLTree.left_of_some, Tree.AVLTree.right_of_some] at Hlbf
     rw [← Hlbf, bf_eq]
     rcases this with (Hlbf_eq | Hlbf_eq) <;> simp [Hlbf_eq]; norm_cast
-
 
 @[pspec]
 theorem AVLNode.rebalance_spec (self: AVLNode T):
