@@ -40,6 +40,9 @@ def AVLNode.left (t: AVLNode T): AVLTree T := match t with
 | AVLNode.mk _ left _ _ => left
 
 @[simp]
+lemma AVLTree.left_of_some {t: AVLNode T}: AVLTree.left (some t) = AVLNode.left t := by cases t; simp [AVLNode.left]
+
+@[simp]
 lemma AVLNode.left_of_mk {x: T} {left right: AVLTree T}: AVLNode.left (AVLNode.mk x left right h) = left := rfl
 
 def AVLNode.right (t: AVLNode T): AVLTree T := match t with
@@ -67,6 +70,9 @@ def AVLTree.height: AVLTree T -> Nat
 end
 
 @[simp]
+def AVLTree.height_of_none: @AVLTree.height T none = 0 := rfl
+
+@[simp]
 def AVLTree.height_of_some {t: AVLNode T}: AVLTree.height (some t) = AVLTree.height_node t := by simp [AVLTree.height]
 
 @[simp]
@@ -92,6 +98,11 @@ def AVLTree.height_left_lt_tree (left right: AVLTree T): AVLTree.height left < A
 def AVLTree.height_left_lt_tree' (t: AVLNode T): AVLTree.height (AVLNode.left t) < AVLTree.height (some t) := by 
   match t with 
   | AVLNode.mk _ left right h => simp only [AVLNode.left, AVLTree.height_left_lt_tree]
+
+def AVLTree.height_left_le_tree' (t: AVLTree T): AVLTree.height (AVLTree.left t) ≤ AVLTree.height t := by 
+  match t with 
+  | none => simp [height, left]
+  | some t => simp only [AVLTree.left_of_some, le_of_lt (AVLTree.height_left_lt_tree' t)]
 
 def AVLTree.height_right_lt_tree (left right: AVLTree T): AVLTree.height right < AVLTree.height (some (AVLNode.mk x left right h)) := by 
   match right with 
