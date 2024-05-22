@@ -1,7 +1,7 @@
 import Verification.Tree
 import Verification.BinarySearchTree
 import Verification.Specifications
-import AvlVerification
+import Verification.Extracted
 
 namespace Implementation
 
@@ -19,7 +19,7 @@ def AVLTreeSet.find_loop_spec
   rewrite [AVLTreeSet.find_loop]
   match t with 
   | none => use false; simp [AVLTree.set]; tauto
-  | some (AVLNode.mk b left right) =>
+  | some (AVLNode.mk b left right _) =>
     dsimp only
     have : ∀ a b, ∃ o, H.cmp a b = .ok o := infallible H
     progress keep Hordering as ⟨ ordering ⟩

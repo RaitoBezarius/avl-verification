@@ -10,7 +10,6 @@
     buildInputs = [
       aeneas
       charon
-      pkgs.rustup
       pkgs.npins
     ];
   };
