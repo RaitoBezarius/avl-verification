@@ -13,9 +13,14 @@ open avl_verification
 -- Here's a bad annoying example
 -- #reduce AVLNode.rotate_right _ (AVLNode.mk' 0 (AVLNode.mk' 1 (AVLNode.mk' 2 none none) (AVLNode.mk' 3 none (AVLNode.mk' 4 none none))) (AVLNode.mk' 5 none none))
 
--- For mathlib:
-lemma neg_max (a b: ℤ): max a b = -min (-a) (-b) := sorry
-lemma neg_min {a b: ℤ}: min a b = -max (-a) (-b) := sorry
+-- TODO: For mathlib:
+lemma neg_max (a b: ℤ): max a b = -min (-a) (-b) := by 
+  simp [Int.max_def, Int.min_def]
+  split_ifs <;> simp <;> linarith
+
+lemma neg_min {a b: ℤ}: min a b = -max (-a) (-b) := by
+  simp [Int.max_def, Int.min_def]
+  split_ifs <;> simp <;> linarith
 
 @[pspec]
 theorem AVLNode.balance_factor_spec (self: AVLNode T):
