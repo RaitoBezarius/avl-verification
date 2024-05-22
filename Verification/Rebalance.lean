@@ -122,7 +122,15 @@ lemma AVLNode.rebalance_spec_positive (left right: Tree.AVLTree T):
     simp
   . 
     -- key: isAVL left ∧ isAVL right ∧ lbf ≠ -1
-    have : lbf.val = 0 ∨ lbf.val = 1 := sorry
+    have : lbf.val = 0 ∨ lbf.val = 1 := by 
+      suffices H_ineq : |lbf.val| ≤ 1 by 
+        simp [Int.abs_le_one_iff] at H_ineq
+        rcases H_ineq with (_ | (_ | H_absurd))
+        left; assumption
+        right; assumption
+        scalar_tac
+      rw [AVLTree.isAVL, H_structure] at H_left_avl
+      rw [Hlbf]; assumption
     progress with AVLNode.rotate_right_spec as ⟨ rotated, t_new, H_right_rotation ⟩
     simp [forall_true_left] at H_right_rotation
     simp [H_right_rotation.2, AVLTree.isAVL, AVLTree.balancingFactor]
