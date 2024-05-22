@@ -49,6 +49,9 @@ def AVLNode.right (t: AVLNode T): AVLTree T := match t with
 | AVLNode.mk _ _ right _ => right
 
 @[simp]
+lemma AVLTree.right_of_some {t: AVLNode T}: AVLTree.right (some t) = AVLNode.right t := by cases t; simp [AVLNode.right]
+
+@[simp]
 lemma AVLNode.right_of_mk {x: T} {left right: AVLTree T}: AVLNode.right (AVLNode.mk x left right h) = right := rfl
 
 def AVLNode.val (t: AVLNode T): T := match t with
