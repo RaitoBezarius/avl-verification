@@ -51,7 +51,12 @@ lemma AVLTree.right_structure_of_nonzero_bf (t: Tree.AVLTree T): AVLTree.balanci
     simp [Tree.AVLTree.balancingFactor, Tree.AVLTree.height] at Ht; linarith [Ht]
   | some (AVLNode.mk x left (some right) h) => refine' ⟨ x, left, right, h, rfl ⟩
 
-lemma AVLTree.left_height_of_bf {left: AVLNode T}: AVLTree.balancingFactor (some left) ≥ 0 -> Tree.AVLTree.height (some left) = 1 + Tree.AVLTree.height (Tree.AVLNode.left left) := by sorry
+lemma AVLTree.left_height_of_bf {left: AVLNode T}: AVLTree.balancingFactor (some left) ≥ 0 -> Tree.AVLTree.height (some left) = 1 + Tree.AVLTree.height (Tree.AVLNode.left left) := by 
+  intro Hlbf
+  match left with 
+  | AVLNode.mk x left_left left_right h => 
+    simp [AVLTree.balancingFactor] at Hlbf 
+    simp [Tree.AVLTree.height, Hlbf]
 
 @[pspec]
 lemma AVLNode.rebalance_spec_positive (left right: Tree.AVLTree T):
@@ -81,13 +86,24 @@ lemma AVLNode.rebalance_spec_positive (left right: Tree.AVLTree T):
       AVLNode.val_of_mk, AVLNode.right_of_mk, IsEmpty.forall_iff, forall_true_left, true_and] at H_right_rotation
     replace H_right_rotation := H_right_rotation.2
     simp [H_right_rotation, AVLTree.isAVL, AVLTree.balancingFactor]
+    simp [AVLTree.balancingFactor, H_structure, H_left_structure] at H_balancing
+    have Hlbf' := Hlbf
+    simp [H_left_structure, AVLTree.balancingFactor, Hlbf_rel_one] at Hlbf'
+    rw [Tree.AVLTree.height_node_eq left_right] at Hlbf'; push_cast at Hlbf'
     set hr := Tree.AVLTree.height right
+    set hll := Tree.AVLTree.height left_left
+    set hlr := Tree.AVLTree.height_node left_right with hlr_def
+    have H_hlr : (hll: ℤ) ≤ (hlr: ℤ) := by 
+      simp [H_left_structure, AVLTree.balancingFactor, Hlbf_rel_one] at Hlbf
+      linarith [Hlbf]
+    simp [max_eq_right H_hlr] at H_balancing
+    rw [hlr_def, Tree.AVLTree.height_node_eq left_right] at H_balancing; push_cast at H_balancing
     set hlrr := Tree.AVLTree.height (Tree.AVLNode.right left_right)
     set hlrl := Tree.AVLTree.height (Tree.AVLNode.left left_right)
-    set hll := Tree.AVLTree.height left_left
     rw [(neg_max hlrr hr), Int.sub_neg, ← min_add_add_left, ← sub_eq_add_neg, ← sub_eq_add_neg]
-    have H_hr : (max hlrl hlrr: ℤ) = hr := by sorry
-    have H_hll : (max hlrl hlrr: ℤ) = hll := by sorry
+    have H_hr : (max hlrl hlrr: ℤ) = hr := by linarith [H_balancing]
+    have H_hll : (max hlrl hlrr: ℤ) = hll := by linarith [Hlbf']
+    -- For reference:
     -- bf = hl - hr
     --    = 1 + hlr - hr because lbf = hll - hlr = -1 ⇒ hll ≤ hlr
     --    = 1 + (1 + max hlrl hlrr) - hr
