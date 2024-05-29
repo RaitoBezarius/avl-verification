@@ -4,4 +4,4 @@ import Verification.Find
 import Verification.Order
 import Verification.Height
 import Verification.Rotate
-import Verification.Rebalance
+import Verification.Rebalance.Complete
