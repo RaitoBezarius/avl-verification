@@ -8,15 +8,15 @@
         "repo": "aeneas"
       },
       "branch": "reexport-our-charon",
-      "revision": "8050a7e7decfe4015b27255571f2d18eea818ba7",
-      "url": "https://github.com/RaitoBezarius/aeneas/archive/8050a7e7decfe4015b27255571f2d18eea818ba7.tar.gz",
-      "hash": "0j6mbk0mwyi45v1pz3xy5h7772vmkm3wxv66m1yrpq4q6iwm8lc0"
+      "revision": "6c253026f4d15e5dd7ad6ae36ce1c0cc2f498faf",
+      "url": "https://github.com/RaitoBezarius/aeneas/archive/6c253026f4d15e5dd7ad6ae36ce1c0cc2f498faf.tar.gz",
+      "hash": "0hxr0nbyiim7awk5kk8nx8krqf28xr126pbli0wgrn1x28rk7qbs"
     },
     "nixpkgs": {
       "type": "Channel",
       "name": "nixpkgs-unstable",
-      "url": "https://releases.nixos.org/nixpkgs/nixpkgs-24.05pre618009.cf8cc1201be8/nixexprs.tar.xz",
-      "hash": "117q8c319lhwmkjzfijjfhhc5mzf99np5iy91bk7f5rcjgr9czrl"
+      "url": "https://releases.nixos.org/nixpkgs/nixpkgs-24.05pre629405.e381a1288138/nixexprs.tar.xz",
+      "hash": "065zm61iiq6my6hd5ls6jhv7sxzay1cqz8jym5jbga7164b3q78c"
     }
   },
   "version": 3
