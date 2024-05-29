@@ -4,7 +4,6 @@ import Verification.Rebalance.BalanceFactor
 
 namespace Implementation
 
-open BST (AVLNode.mk')
 open avl_verification
 open Primitives
 open Tree (AVLTree.balancingFactor)

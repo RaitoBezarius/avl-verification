@@ -4,7 +4,6 @@ import Verification.AVL
 
 namespace Implementation
 
-open BST (AVLNode.mk')
 open Tree (AVLTree.balancingFactor AVLTree.balancingFactor_eq AVLTree.isAVL AVLNode.left_of_mk AVLNode.right_of_mk AVLNode.val_of_mk)
 open Primitives
 open avl_verification
