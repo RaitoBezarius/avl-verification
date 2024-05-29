@@ -126,10 +126,10 @@ decreasing_by
 -- TODO: discharge all bound requirements
 -- by taking (multiple?) hypotheses.
 @[pspec]
-def AVLNode.update_height_spec (x: T) (h: Usize) (left right: AVLTree T): ∃ t_new, AVLNode.update_height _ (AVLNode.mk x left right h) = .ok t_new ∧ t_new = AVLNode.mk' x left right := by 
+def AVLNode.update_height_spec (x: T) (h: Usize) (left right: AVLTree T) [InBounds .Usize (1 + max left.height right.height)]: ∃ t_new, AVLNode.update_height _ (AVLNode.mk x left right h) = .ok t_new ∧ t_new = AVLNode.mk' x left right := by 
   simp [AVLNode.update_height]
   haveI: Fact (¬ ScalarTy.isSigned .Usize) := ⟨by simp [ScalarTy.isSigned]⟩
-  rcases Hleft: left with _ | ⟨ a, left_left, left_right, h_left ⟩ <;> rcases Hright: right with _ | ⟨ b, right_left, right_right, h_right ⟩ <;> simp [AVLNode.right_height, AVLNode.left_height]
+  rcases left with _ | ⟨ a, left_left, left_right, h_left ⟩ <;> rcases right with _ | ⟨ b, right_left, right_right, h_right ⟩ <;> simp [AVLNode.right_height, AVLNode.left_height]
   -- TODO: clean up proof structure
   -- it's always the same.
   . progress with max_spec as ⟨ w, Hw ⟩

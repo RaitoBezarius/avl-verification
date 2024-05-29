@@ -2,7 +2,7 @@ import Verification.Tree
 
 namespace BST
 
-open Primitives (Result Scalar)
+open Primitives (Result Scalar InBounds)
 open avl_verification (AVLNode Ordering)
 open Tree (AVLTree AVLNode.left AVLNode.right AVLNode.val)
 
@@ -10,15 +10,15 @@ open Tree (AVLTree AVLNode.left AVLNode.right AVLNode.val)
 -- with automatic height computation?
 
 @[reducible]
-def AVLNode.mk' (a: T) (left: AVLTree T) (right: AVLTree T): AVLNode T := 
-  let height := 1 + max left.height right.height
+def AVLNode.mk' 
+  (a: T) (left: AVLTree T) (right: AVLTree T) [InBounds .Usize (1 + max left.height right.height)]: AVLNode T := 
   -- TODO: Scalar.ofNat would be nice...
   -- discharge the proof by bounding left & right's height all the time... ?
   -- Interesting remark:
   -- Lean can support trees of arbitrary height
   -- Rust cannot because the height computation will overflow at some point, Rust can only do with trees with representable (usize) height.
   -- It's not big deal because the maximally sized tree is bigger than what modern computer can store at all (exabyte-sized tree).
-  AVLNode.mk a left right (@Scalar.ofInt _ height (by sorry))
+  AVLNode.mk a left right (Scalar.ofInt (1 + max left.height right.height))
 
 inductive ForallNode (p: T -> Prop): AVLTree T -> Prop
 | none : ForallNode p none
